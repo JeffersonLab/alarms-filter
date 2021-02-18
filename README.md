@@ -19,14 +19,7 @@ cd alarms-filter
 ```
 docker-compose up
 ```
-3. Monitor for expiration tombstone message 
-```
-docker exec -it console /scripts/client/list-shelved.py --monitor 
-```
-4. Shelve an alarm for 5 seconds
-```
-docker exec -it console /scripts/client/set-shelved.py alarm1 --reason "We are testing this alarm" --expirationseconds 5
-```
+3. TODO: We're just getting this project started...
 ## Build
 This [Java 11](https://adoptopenjdk.net/) project uses the [Gradle 6](https://gradle.org/) build tool to automatically download dependencies and build the project from source:
 
