@@ -15,6 +15,6 @@ RUN git clone https://github.com/JeffersonLab/alarms-filter \
     && cp ./docker-entrypoint.sh / \
     && rm -rf /home/gradle/alarms-filter
 
-WORKDIR /
+WORKDIR /opt/alarms-filter/bin
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
