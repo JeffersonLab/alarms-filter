@@ -58,8 +58,8 @@ JACK_ANN=`ls $APP_HOME/libs/jackson-annotations-*`
 SLF4J_API=`ls $APP_HOME/libs/slf4j-api-*`
 SLF4J_IMP=`ls $APP_HOME/libs/slf4j-log4j*`
 LOG4J_IMP=`ls $APP_HOME/libs/log4j-*`
-LOG4J_CONF=$CWD
+LOG4J_CONF=$APP_HOME/config
 
 RUN_CP="$FILTER_JAR:$CLIENTS_JAR:$SLF4J_API:$SLF4J_IMP:$LOG4J_IMP:$LOG4J_CONF:$JACK_CORE:$JACK_BIND:$JACK_ANN"
 
-java -cp $RUN_CP CommandProducer $BOOTSTRAP_SERVERS filter-commands $name $expression
+java -cp $RUN_CP org.jlab.alarms.client.CommandProducer $BOOTSTRAP_SERVERS filter-commands $name $expression
