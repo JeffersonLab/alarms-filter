@@ -6,7 +6,7 @@ CWD=$(readlink -f "$(dirname "$0")")
 
 APP_HOME=$CWD/..
 
-FILTER_JAR=`ls $APP_HOME/lib/alarms-filter-*`
+FILTER_JAR=`ls $APP_HOME/lib/alarms-filter*`
 CLIENTS_JAR=`ls $APP_HOME/lib/kafka-clients-*`
 JACK_CORE=`ls $APPP_HOME/lib/jackson-core-*`
 JACK_BIND=`ls $APP_HOME/lib/jackson-databind-*`
