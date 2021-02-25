@@ -126,6 +126,21 @@ public class AlarmsFilter {
         final KafkaStreams streams = new KafkaStreams(top, props);
         final CountDownLatch latch = new CountDownLatch(1);
 
+        RegisteredAlarmsConsumer registeredConsumer = new RegisteredAlarmsConsumer();
+
+        CommandConsumerConfig commandConfig = new CommandConsumerConfig(new HashMap<>());
+
+        CommandTopicConsumer commandConsumer = new CommandTopicConsumer(new CommandChangeListener() {
+            @Override
+            public void update() {
+                // 1. Stop Streams
+                // 2. Clear output topic
+                // 3. Restart streams with new commands
+            }
+        }, commandConfig);
+
+        commandConsumer.start();
+
         // attach shutdown handler to catch control-c
         Runtime.getRuntime().addShutdownHook(new Thread("streams-shutdown-hook") {
             @Override
