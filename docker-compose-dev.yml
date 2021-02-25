@@ -2,6 +2,6 @@
 version: '3.8'
 
 services:
-  timer:
+  filter:
     volumes:
       - ./build/install/alarms-filter:/opt/alarms-filter
