@@ -60,9 +60,14 @@ public class AlarmsFilter {
      */
     static Topology createTopology(Properties props) {
         final StreamsBuilder builder = new StreamsBuilder();
+
+        // If you get an unhelpful NullPointerException in the depths of the AVRO deserializer it's likely because you didn't set registry config
         Map<String, String> config = new HashMap<>();
         config.put(SCHEMA_REGISTRY_URL_CONFIG, props.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
+
+        INPUT_KEY_SERDE.configure(config, true);
         INPUT_VALUE_SERDE.configure(config, false);
+
 
         final KStream<ActiveAlarmKey, ActiveAlarmValue> input = builder.stream(INPUT_TOPIC, Consumed.with(INPUT_KEY_SERDE, INPUT_VALUE_SERDE));
 
