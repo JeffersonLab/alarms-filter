@@ -20,7 +20,7 @@ public class AlarmsFilter {
     private static final Logger log = LoggerFactory.getLogger(AlarmsFilter.class);
 
     public static final String INPUT_TOPIC = "active-alarms";
-    public static final String OUTPUT_TOPIC = "filtered-active-alarms";
+    public static final String OUTPUT_TOPIC = "filtered-alarms";
 
     public static final SpecificAvroSerde<ActiveAlarmKey> INPUT_KEY_SERDE = new SpecificAvroSerde<>();
     public static final SpecificAvroSerde<ActiveAlarmValue> INPUT_VALUE_SERDE = new SpecificAvroSerde<>();
