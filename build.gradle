@@ -69,6 +69,9 @@ distributions {
             from('config') {
                 into 'config'
             }
+            from('scripts') {
+                into 'bin'
+            }
         }
     }
 }
