@@ -2,8 +2,6 @@ package org.jlab.alarms;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.Serde;
-import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.processor.Cancellable;
@@ -24,12 +22,12 @@ import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHE
 public class AlarmsFilter {
     private static final Logger log = LoggerFactory.getLogger(AlarmsFilter.class);
 
-    public static final String INPUT_TOPIC = "shelved-alarms";
-    public static final String OUTPUT_TOPIC = INPUT_TOPIC;
+    public static final String INPUT_TOPIC = "active-alarms";
+    public static final String OUTPUT_TOPIC = "filtered-active-alarms";
 
-    public static final Serde<String> INPUT_KEY_SERDE = Serdes.String();
+    public static final SpecificAvroSerde<ActiveAlarmKey> INPUT_KEY_SERDE = new SpecificAvroSerde<>();
     public static final SpecificAvroSerde<ActiveAlarmValue> INPUT_VALUE_SERDE = new SpecificAvroSerde<>();
-    public static final Serde<String> OUTPUT_KEY_SERDE = INPUT_KEY_SERDE;
+    public static final SpecificAvroSerde<ActiveAlarmKey> OUTPUT_KEY_SERDE = INPUT_KEY_SERDE;
     public static final SpecificAvroSerde<ActiveAlarmValue> OUTPUT_VALUE_SERDE = INPUT_VALUE_SERDE;
 
     /**
@@ -69,9 +67,9 @@ public class AlarmsFilter {
         config.put(SCHEMA_REGISTRY_URL_CONFIG, props.getProperty(SCHEMA_REGISTRY_URL_CONFIG));
         INPUT_VALUE_SERDE.configure(config, false);
 
-        final KStream<String, ActiveAlarmValue> input = builder.stream(INPUT_TOPIC, Consumed.with(INPUT_KEY_SERDE, INPUT_VALUE_SERDE));
+        final KStream<ActiveAlarmKey, ActiveAlarmValue> input = builder.stream(INPUT_TOPIC, Consumed.with(INPUT_KEY_SERDE, INPUT_VALUE_SERDE));
 
-        final KStream<String, ActiveAlarmValue> output = input.transform(new MsgTransformerFactory());
+        final KStream<ActiveAlarmKey, ActiveAlarmValue> output = input.transform(new MsgTransformerFactory());
 
         output.to(OUTPUT_TOPIC, Produced.with(OUTPUT_KEY_SERDE, OUTPUT_VALUE_SERDE));
 
@@ -82,7 +80,7 @@ public class AlarmsFilter {
      * Factory to create Kafka Streams Transformer instances; references a stateStore to maintain previous
      * RegisteredAlarms.
      */
-    private static final class MsgTransformerFactory implements TransformerSupplier<String, ActiveAlarmValue, KeyValue<String, ActiveAlarmValue>> {
+    private static final class MsgTransformerFactory implements TransformerSupplier<ActiveAlarmKey, ActiveAlarmValue, KeyValue<ActiveAlarmKey, ActiveAlarmValue>> {
 
         /**
          * Return a new {@link Transformer} instance.
@@ -90,8 +88,8 @@ public class AlarmsFilter {
          * @return a new {@link Transformer} instance
          */
         @Override
-        public Transformer<String, ActiveAlarmValue, KeyValue<String, ActiveAlarmValue>> get() {
-            return new Transformer<String, ActiveAlarmValue, KeyValue<String, ActiveAlarmValue>>() {
+        public Transformer<ActiveAlarmKey, ActiveAlarmValue, KeyValue<ActiveAlarmKey, ActiveAlarmValue>> get() {
+            return new Transformer<ActiveAlarmKey, ActiveAlarmValue, KeyValue<ActiveAlarmKey, ActiveAlarmValue>>() {
                 private ProcessorContext context;
 
                 @Override
@@ -100,54 +98,16 @@ public class AlarmsFilter {
                 }
 
                 @Override
-                public KeyValue<String, ActiveAlarmValue> transform(String key, ActiveAlarmValue value) {
-                    KeyValue<String, ActiveAlarmValue> result = null; // null returned to mean no record
+                public KeyValue<ActiveAlarmKey, ActiveAlarmValue> transform(ActiveAlarmKey key, ActiveAlarmValue value) {
+                    KeyValue<ActiveAlarmKey, ActiveAlarmValue> result = null; // null returned to mean no record
 
                     log.debug("Handling message: {}={}", key, value);
 
-                    // Get (and remove) timer handle (if exists)
-                    Cancellable handle = channelHandleMap.remove(key);
-
-                    // If exists, we always cancel timers
-                    if (handle != null) {
-                        log.debug("Timer Cancelled");
-                        handle.cancel();
-                    } else {
-                        log.debug("No Timer exists");
+                    if(key.getType() == ActiveMessageType.EPICSAck) { // We only let EPICS acks through (as a test!)
+                        result = new KeyValue<>(key, value);
                     }
 
-                    if (value != null ) { // Set new timer
-                        Instant ts = Instant.now();
-                        Instant now = Instant.now();
-                        long delayInSeconds = Duration.between(now, ts).getSeconds();
-                        if (now.isAfter(ts)) {
-                            delayInSeconds = 0; // If expiration is in the past then expire immediately
-                        }
-                        log.debug("Scheduling {} for delay of: {} seconds ", key, delayInSeconds);
-
-                        Cancellable newHandle = context.schedule(Duration.ofSeconds(delayInSeconds), PunctuationType.WALL_CLOCK_TIME, timestamp -> {
-                            log.debug("Punctuation triggered for: {}", key);
-
-                            // Attempt to cancel timer immediately so only run once; can fail if schedule doesn't return fast enough before timer triggered!
-                            Cancellable h = channelHandleMap.remove(key);
-                            if(h != null) {
-                                h.cancel();
-                            }
-
-                            context.forward(key, null);
-                        });
-
-                        Cancellable oldHandle = channelHandleMap.put(key, newHandle);
-
-                        // This is to ensure we cancel every timer before losing it's handle otherwise it'll run forever (they repeat until cancelled)
-                        if(oldHandle != null) { // This should only happen if timer callback is unable to cancel future runs (because handle assignment in map too slow)
-                            oldHandle.cancel();
-                        }
-                    } else {
-                        log.debug("Either null value or null expiration so no timer set!");
-                    }
-
-                    return result; // We never return anything but null here because records are produced async
+                    return result;
                 }
 
                 @Override
