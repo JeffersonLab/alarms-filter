@@ -10,4 +10,4 @@ while [ $(curl -s -o /dev/null -w %{http_code} $url/subjects) -eq 000 ] ; do
   sleep 5
 done
 
-/opt/alarms-filter/bin/alarms-filter
+/opt/alarms-filter/bin/alarms-filter -Dlog.dir=/opt/alarms-filter/logs

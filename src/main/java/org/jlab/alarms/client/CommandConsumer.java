@@ -2,14 +2,22 @@ package org.jlab.alarms.client;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.util.*;
 
 public class CommandConsumer {
 
+    private static final Logger log = LoggerFactory.getLogger(CommandConsumer.class);
+
     public static void main(String[] args) {
         String servers = args[0];
         String topic = args[1];
+
+        System.err.println("CommandConsumer main");
+        log.warn("Hey Oh");
 
         Properties props = new Properties();
         props.put("bootstrap.servers", servers);

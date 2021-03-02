@@ -46,6 +46,7 @@ jar {
 
 application {
     mainClassName = 'org.jlab.alarms.AlarmsFilter'
+    applicationDefaultJvmArgs = ['-Dlog.dir=logs']
 }
 
 build {

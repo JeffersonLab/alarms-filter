@@ -43,8 +43,7 @@ fi
 
 if [ "$unset" ]
 then
-  # kafka-console-producer can't write tombstone (null) messages!
-  # Hack - we will just compile and run tiny Java program then!
+  expression = null
 
 CWD=$(readlink -f "$(dirname "$0")")
 
@@ -62,4 +61,4 @@ LOG4J_CONF=$APP_HOME/config
 
 RUN_CP="$FILTER_JAR:$CLIENTS_JAR:$SLF4J_API:$SLF4J_IMP:$LOG4J_IMP:$LOG4J_CONF:$JACK_CORE:$JACK_BIND:$JACK_ANN"
 
-java -cp $RUN_CP org.jlab.alarms.client.CommandProducer $BOOTSTRAP_SERVERS filter-commands $name $expression
+java -Dlog.dir=$APP_HOME/logs -cp $RUN_CP org.jlab.alarms.client.CommandProducer $BOOTSTRAP_SERVERS filter-commands $name $expression
