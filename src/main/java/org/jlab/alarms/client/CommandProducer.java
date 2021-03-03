@@ -46,7 +46,7 @@ public class CommandProducer {
     static String[] fromCsv(String csv) {
         String[] result = null;
 
-        if(csv != null) {
+        if(csv != null && !csv.isEmpty()) {
             result = csv.split(",");
         }
 
