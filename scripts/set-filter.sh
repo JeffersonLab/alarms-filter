@@ -13,7 +13,7 @@ help+="  Set:   $0 [-n] filterName [-o] outTopic [-a] alarmNameCsv [-c] category
 help+=$'\n'
 help+="  Unset: $0 [-n] filterName -u"
 
-while getopts ":u:o:n:a:c:l" opt; do
+while getopts ":u:o:n:a:c:l:" opt; do
   case ${opt} in
     u )
       unset=true
