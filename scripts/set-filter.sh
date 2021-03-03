@@ -9,20 +9,29 @@ read -ra tmpArray <<< "$BOOTSTRAP_SERVERS"
 BOOTSTRAP_SERVER=${tmpArray[0]}
 
 help=$'Usage:\n'
-help+="  Set:   $0 [-n] name [-e] expression"
+help+="  Set:   $0 [-n] filterName [-o] outTopic [-a] alarmNameCsv [-c] categoryCsv [-l] locationCsv"
 help+=$'\n'
-help+="  Unset: $0 [-n] name -u"
+help+="  Unset: $0 [-n] filterName -u"
 
-while getopts ":c:t:m:o:u" opt; do
+while getopts ":u:o:n:a:c:l" opt; do
   case ${opt} in
     u )
       unset=true
       ;;
-    n )
-      name=$OPTARG
+    o )
+      outTopic=$OPTARG
       ;;
-    e )
-      expression=$OPTARG
+    n )
+      filterName=$OPTARG
+      ;;
+    a )
+      alarmNameCsv=$OPTARG
+      ;;
+    c )
+      categoryCsv=$OPTARG
+      ;;
+    l )
+      locationCsv=$OPTARG
       ;;
     \? ) echo "$help"
       ;;
@@ -35,30 +44,21 @@ then
     exit
 fi
 
-if [ ! "$channel" ]
-then
-  echo "$help"
-  exit;
-fi
-
-if [ "$unset" ]
-then
-  expression = null
 
 CWD=$(readlink -f "$(dirname "$0")")
 
 APP_HOME=$CWD/..
 
 FILTER_JAR=`ls $APP_HOME/lib/alarms-filter*`
-CLIENTS_JAR=`ls $APP_HOME/libs/kafka-clients-*`
-JACK_CORE=`ls $APP_HOME/libs/jackson-core-*`
-JACK_BIND=`ls $APP_HOME/libs/jackson-databind-*`
-JACK_ANN=`ls $APP_HOME/libs/jackson-annotations-*`
-SLF4J_API=`ls $APP_HOME/libs/slf4j-api-*`
-SLF4J_IMP=`ls $APP_HOME/libs/slf4j-log4j*`
-LOG4J_IMP=`ls $APP_HOME/libs/log4j-*`
+CLIENTS_JAR=`ls $APP_HOME/lib/kafka-clients-*`
+JACK_CORE=`ls $APP_HOME/lib/jackson-core-*`
+JACK_BIND=`ls $APP_HOME/lib/jackson-databind-*`
+JACK_ANN=`ls $APP_HOME/lib/jackson-annotations-*`
+SLF4J_API=`ls $APP_HOME/lib/slf4j-api-*`
+SLF4J_IMP=`ls $APP_HOME/lib/slf4j-log4j*`
+LOG4J_IMP=`ls $APP_HOME/lib/log4j-*`
 LOG4J_CONF=$APP_HOME/config
 
 RUN_CP="$FILTER_JAR:$CLIENTS_JAR:$SLF4J_API:$SLF4J_IMP:$LOG4J_IMP:$LOG4J_CONF:$JACK_CORE:$JACK_BIND:$JACK_ANN"
 
-java -Dlog.dir=$APP_HOME/logs -cp $RUN_CP org.jlab.alarms.client.CommandProducer $BOOTSTRAP_SERVERS filter-commands $name $expression
+java -Dlog.dir=$APP_HOME/logs -cp $RUN_CP org.jlab.alarms.client.CommandProducer $BOOTSTRAP_SERVERS filter-commands "$filterName" "$unset" "$outTopic" "$alarmNameCsv" "$locationCsv" "$categoryCsv"

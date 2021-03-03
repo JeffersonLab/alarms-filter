@@ -25,7 +25,7 @@ public class CommandConsumer {
         props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
         props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
-        OffsetInfo info = new OffsetInfo();
+         TopicInfo info = new TopicInfo();
 
         try(KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
                 consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceListener() {
@@ -38,24 +38,32 @@ public class CommandConsumer {
                     consumer.seekToBeginning(partitions);
                     
                     info.lastOffset = consumer.endOffsets(partitions).values().toArray(new Long[0])[0] - 1;
+
+                    System.out.println("last offset: " + info.lastOffset);
+
+                    if(info.lastOffset == -1) {
+                        System.out.println("Never been any messages in the topic!");
+                        info.empty = true; // Never been any messages in topic!
+                    }
                 }
             });
 
-            boolean empty = false;
-
-            while (!empty) {
+            while (!info.empty) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
 
+                System.out.println("Looping...");
+
                 for (ConsumerRecord<String, String> record : records) {
-                    System.out.printf("%s=%s%n", record.key(), record.value());
-                    empty = (info.lastOffset == record.offset());
-		}
+                    System.err.printf("%s=%s%n", record.key(), record.value());
+                    info.empty = (info.lastOffset == record.offset());
+		        }
            }
 	}
     }
 
-    static class OffsetInfo {
+    static class TopicInfo {
        public long lastOffset = 0;
+       public boolean empty = false;
     }
 }
 

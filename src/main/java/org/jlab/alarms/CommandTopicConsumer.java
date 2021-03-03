@@ -1,8 +1,6 @@
 package org.jlab.alarms;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -32,7 +30,7 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
     private AtomicReference<TRI_STATE> state = new AtomicReference<>(TRI_STATE.INITIALIZED);
     private final CommandChangeListener listener;
     private final Object config;
-    private HashMap<CommandKey, CommandRecord> commands = new HashMap<>();
+    private HashMap<CommandRecord.CommandKey, CommandRecord> commands = new HashMap<>();
     private KafkaConsumer<String, String> consumer;
     private Map<Integer, TopicPartition> assignedPartitionsMap = new HashMap<>(); // empty map initially to avoid NPE
     private Map<TopicPartition, Long> endOffsets;
@@ -136,10 +134,10 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
     private void commandUpdate(ConsumerRecord<String, String> record) {
         log.debug("Command update: {}={}", record.key(), record.value());
 
-        CommandKey key = null;
+        CommandRecord.CommandKey key = null;
 
         try {
-            key = CommandKey.fromJSON(record.key());
+            key = CommandRecord.CommandKey.fromJSON(record.key());
         } catch(JsonProcessingException e) {
             throw new RuntimeException("Unable to parse JSON key from command topic", e);
         }
@@ -150,9 +148,9 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
         } else {
             log.info("Adding record: {}", key.getName());
             CommandRecord cr = null;
-            CommandValue value = null;
+            CommandRecord.CommandValue value = null;
             try {
-                value = CommandValue.fromJSON(record.value());
+                value = CommandRecord.CommandValue.fromJSON(record.value());
             } catch(JsonProcessingException e) {
                 throw new RuntimeException("Unable to parse JSON value from command topic", e);
             }
@@ -227,176 +225,5 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
 
     private enum TRI_STATE {
         INITIALIZED, RUNNING, CLOSED;
-    }
-}
-
-class CommandRecord {
-    @JsonIgnore
-    private CommandKey key;
-    @JsonIgnore
-    private CommandValue value;
-
-    public CommandRecord() {
-        key = new CommandKey();
-        value = new CommandValue();
-    }
-
-    public CommandRecord(CommandKey key, CommandValue value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CommandRecord that = (CommandRecord) o;
-        return Objects.equals(key, that.key);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(key);
-    }
-
-    public CommandKey getKey() {
-        return key;
-    }
-
-    public CommandValue getValue() {
-        return value;
-    }
-
-    public String getName() {
-        return key.getName();
-    }
-
-    public void setName(String name) {
-        key.setName(name);
-    }
-
-    public String getOutputTopic() {
-        return value.getOutputTopic();
-    }
-
-    public String getFilterExpression() {
-        return value.getFilterExpression();
-    }
-
-    public String toJSON() {
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        String json = null;
-
-        try {
-            json = objectMapper.writeValueAsString(this);
-        } catch(JsonProcessingException e) {
-            throw new RuntimeException("Nothing a user can do about this; JSON couldn't be created!", e);
-        }
-
-        return json;
-    }
-
-    @Override
-    public String toString() {
-        return "CommandRecord{" +
-                "name='" + key.getName() + '\'' +
-                ", outputTopic='" + value.getOutputTopic() + '\'' +
-                ", filterExpression='" + value.getFilterExpression() + '\'' +
-                '}';
-    }
-}
-
-class CommandKey {
-    private String name; // filter name
-
-    public CommandKey() {
-
-    }
-
-    public CommandKey(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CommandKey key = (CommandKey) o;
-        return Objects.equals(name, key.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
-    }
-
-    public String toJSON() {
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        String json = null;
-
-        try {
-            json = objectMapper.writeValueAsString(this);
-        } catch(JsonProcessingException e) {
-            throw new RuntimeException("Nothing a user can do about this; JSON couldn't be created!", e);
-        }
-
-        return json;
-    }
-
-    public static CommandKey fromJSON(String json) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        return objectMapper.readValue(json, CommandKey.class);
-    }
-}
-
-class CommandValue {
-    private String outputTopic;
-    private String filterExpression; // TODO: is this how we want to handle filtering?
-
-    public CommandValue() {
-    }
-
-    public CommandValue(String outputTopic, String filterExpression) {
-        this.outputTopic = outputTopic;
-        this.filterExpression = filterExpression;
-    }
-
-    public String getOutputTopic() {
-        return outputTopic;
-    }
-
-    public String getFilterExpression() {
-        return filterExpression;
-    }
-
-    public String toJSON() {
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        String json = null;
-
-        try {
-            json = objectMapper.writeValueAsString(this);
-        } catch(JsonProcessingException e) {
-            throw new RuntimeException("Nothing a user can do about this; JSON couldn't be created!", e);
-        }
-
-        return json;
-    }
-
-    public static CommandValue fromJSON(String json) throws JsonProcessingException {
-        ObjectMapper objectMapper = new ObjectMapper();
-
-        return objectMapper.readValue(json, CommandValue.class);
     }
 }
