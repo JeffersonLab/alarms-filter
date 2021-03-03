@@ -16,9 +16,6 @@ public class CommandConsumer {
         String servers = args[0];
         String topic = args[1];
 
-        System.err.println("CommandConsumer main");
-        log.warn("Hey Oh");
-
         Properties props = new Properties();
         props.put("bootstrap.servers", servers);
         props.put("group.id", "CommandConsumer");
@@ -39,10 +36,7 @@ public class CommandConsumer {
                     
                     info.lastOffset = consumer.endOffsets(partitions).values().toArray(new Long[0])[0] - 1;
 
-                    System.out.println("last offset: " + info.lastOffset);
-
                     if(info.lastOffset == -1) {
-                        System.out.println("Never been any messages in the topic!");
                         info.empty = true; // Never been any messages in topic!
                     }
                 }
@@ -51,10 +45,8 @@ public class CommandConsumer {
             while (!info.empty) {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
 
-                System.out.println("Looping...");
-
                 for (ConsumerRecord<String, String> record : records) {
-                    System.err.printf("%s=%s%n", record.key(), record.value());
+                    System.out.printf("%s=%s%n", record.key(), record.value());
                     info.empty = (info.lastOffset == record.offset());
 		        }
            }
