@@ -21,9 +21,14 @@ import java.util.stream.Collectors;
  *
  * The command topic is Event Sourced so records with duplicate keys are allowed and records later in the
  * stream overwrite ones earlier in the stream if they have the same key.  Tombstone records also are observed.
- * Topic compaction should be enabled to minimize duplicate keys.  Command topic keys are unique Strings representing
- * the name of the filter and values are JSON structures containing the name of the output topic and filter criteria.
- * Therefore it is possible to have multiple filters writing to the same output topic.
+ * Topic compaction should be enabled to minimize duplicate keys.  Command topic keys and values are JSON formatted.
+ * The key contains only the outputTopic name.  The value contains the filter name and filter criteria.
+ *
+ * Only one filter can write to any given output topic since the command key contain only the output topic name.
+ *
+ * Filter criteria include a set of alarm names, a set of locations, and a set of categories.   Any of the three fields
+ * can be null, in  which case the record is not filtered out based on that field.   If multiple fields are non-null
+ * then the logic uses "and" between them.
  */
 public class CommandTopicConsumer extends Thread implements AutoCloseable {
     private final Logger log = LoggerFactory.getLogger(CommandTopicConsumer.class);
