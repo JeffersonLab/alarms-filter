@@ -5,10 +5,8 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.connect.health.ConnectClusterDetails;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
-import org.apache.kafka.streams.processor.Cancellable;
 import org.apache.kafka.streams.processor.ProcessorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -184,7 +182,18 @@ public class AlarmsFilter {
         Properties adminProps = getAdminConfig();
         admin = AdminClient.create(adminProps);
 
-        RegisteredAlarmsConsumer registeredConsumer = new RegisteredAlarmsConsumer();
+        EventSourceConsumer registeredConsumer = new EventSourceConsumer<EventSourceRecord<String, RegisteredAlarm>>(new EventSourceConfig(new HashMap<>()), new EventSourceListener<EventSourceRecord<String, RegisteredAlarm>>() {
+            @Override
+            public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
+                for(EventSourceRecord<String, RegisteredAlarm> record: changes) {
+                    if(record.getValue() == null) {
+                        registeredAlarms.remove(record.getKey());
+                    } else {
+                        registeredAlarms.put(record.getKey(), record.getValue());
+                    }
+                }
+            }
+        });
 
         CommandConsumerConfig commandConfig = new CommandConsumerConfig(new HashMap<>());
 
