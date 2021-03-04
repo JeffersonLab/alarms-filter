@@ -32,6 +32,8 @@ public class AlarmsFilter {
 
     final static Map<CommandRecord.CommandKey, KafkaStreams> streamsList = new ConcurrentHashMap<>();
 
+    final static Map<String, RegisteredAlarm> registeredAlarms = new ConcurrentHashMap<>();
+
     final static CountDownLatch latch = new CountDownLatch(1);
 
     static Properties getAdminConfig() {
@@ -73,7 +75,7 @@ public class AlarmsFilter {
      * @param props The streams configuration
      * @return The Topology
      */
-    static Topology createTopology(Properties props) {
+    static Topology createTopology(Properties props, CommandRecord command) {
         final StreamsBuilder builder = new StreamsBuilder();
 
         // If you get an unhelpful NullPointerException in the depths of the AVRO deserializer it's likely because you didn't set registry config
@@ -86,7 +88,7 @@ public class AlarmsFilter {
 
         final KStream<ActiveAlarmKey, ActiveAlarmValue> input = builder.stream(INPUT_TOPIC, Consumed.with(INPUT_KEY_SERDE, INPUT_VALUE_SERDE));
 
-        final KStream<ActiveAlarmKey, ActiveAlarmValue> output = input.transform(new MsgTransformerFactory());
+        final KStream<ActiveAlarmKey, ActiveAlarmValue> output = input.transform(new MsgTransformerFactory(command));
 
         output.to(props.getProperty("OUTPUT_TOPIC"), Produced.with(OUTPUT_KEY_SERDE, OUTPUT_VALUE_SERDE));
 
@@ -94,10 +96,15 @@ public class AlarmsFilter {
     }
 
     /**
-     * Factory to create Kafka Streams Transformer instances; references a stateStore to maintain previous
-     * RegisteredAlarms.
+     * Factory to create Kafka Streams Transformer instances.
      */
     private static final class MsgTransformerFactory implements TransformerSupplier<ActiveAlarmKey, ActiveAlarmValue, KeyValue<ActiveAlarmKey, ActiveAlarmValue>> {
+
+        private final CommandRecord command;
+
+        public MsgTransformerFactory(CommandRecord command) {
+            this.command = command;
+        }
 
         /**
          * Return a new {@link Transformer} instance.
@@ -120,7 +127,40 @@ public class AlarmsFilter {
 
                     log.debug("Handling message: {}={}", key, value);
 
-                    if(key.getType() == ActiveMessageType.EPICSAck) { // We only let EPICS acks through (as a test!)
+                    log.debug("Applying filter: {}", command.getFilterName());
+
+                    Set<String> alarmNames = command.getAlarmNames();
+                    Set<String> locations = command.getLocations();
+                    Set<String> categories = command.getCategories();
+
+                    String alarmName = key.getName();
+                    String location = null;
+                    String category = null;
+
+                    RegisteredAlarm alarm = registeredAlarms.get(alarmName);
+
+                    if(alarm != null) {
+                        location = alarm.getLocation().name();
+                        category = alarm.getCategory().name();
+                    }
+
+                    boolean nameMatch = true;
+                    boolean locationMatch = true;
+                    boolean categoryMatch = true;
+
+                    if(alarmNames != null) {
+                        nameMatch = alarmNames.contains(alarmName);
+                    }
+
+                    if(locations != null) {
+                        locationMatch = locations.contains(location);
+                    }
+
+                    if(categories != null) {
+                        categoryMatch = categories.contains(category);
+                    }
+
+                    if(nameMatch && locationMatch && categoryMatch) {
                         result = new KeyValue<>(key, value);
                     }
 
@@ -206,7 +246,7 @@ public class AlarmsFilter {
         log.debug("setStream: {}", command.getOutputTopic());
 
         final Properties props = getStreamsConfig(command.getOutputTopic());
-        final Topology top = createTopology(props);
+        final Topology top = createTopology(props, command);
         final KafkaStreams streams = new KafkaStreams(top, props);
 
         streamsList.put(command.getKey(), streams);

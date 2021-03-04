@@ -6,6 +6,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 
@@ -26,9 +28,15 @@ public class AlarmsFilterTest {
 
         final String outTopicName = "alarms-filter-test";
 
+        final CommandRecord command = new CommandRecord();
+        command.setOutputTopic(outTopicName);
+        command.setFilterName("Testing Filter!");
+        command.setAlarmNames(new HashSet<>(Arrays.asList(new String[]{"alarm1"}))); // Only allow alarm1 to pass filter
+
+
         final Properties streamsConfig = AlarmsFilter.getStreamsConfig(outTopicName);
         streamsConfig.put(SCHEMA_REGISTRY_URL_CONFIG, "mock://testing");
-        final Topology top = AlarmsFilter.createTopology(streamsConfig);
+        final Topology top = AlarmsFilter.createTopology(streamsConfig, command);
         testDriver = new TopologyTestDriver(top, streamsConfig);
 
         // setup test topics
@@ -63,7 +71,7 @@ public class AlarmsFilterTest {
     }
 
     @Test
-    public void filterByMsgType() {
+    public void filterByName() {
         System.out.println("Key: " + alarmKey1);
         System.out.println("Value: " + alarmValue1);
         System.out.println("Topic: " + inputTopic);
@@ -76,7 +84,7 @@ public class AlarmsFilterTest {
 
         KeyValue<ActiveAlarmKey, ActiveAlarmValue> result = resultList.get(0);
 
-        Assert.assertEquals(alarmKey2, result.key);
-        Assert.assertEquals(alarmValue2, result.value);
+        Assert.assertEquals(alarmKey1, result.key);
+        Assert.assertEquals(alarmValue1, result.value);
     }
 }

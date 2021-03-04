@@ -4,7 +4,10 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.jlab.alarms.CommandRecord;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
 
 public class CommandProducer {
     public static void main(String[] args) {
@@ -44,11 +47,12 @@ public class CommandProducer {
         }
     }
 
-    static String[] fromCsv(String csv) {
-        String[] result = null;
+    static Set<String> fromCsv(String csv) {
+        Set<String> result = null;
 
         if(csv != null && !csv.isEmpty()) {
-            result = csv.split(",");
+            String[] resultArray = csv.split(",");
+            result = new HashSet<String>(Arrays.asList(resultArray));
         }
 
         return result;

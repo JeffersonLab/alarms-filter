@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Objects;
+import java.util.Set;
 
 public class CommandRecord {
     @JsonIgnore
@@ -47,19 +48,31 @@ public class CommandRecord {
         return value.getFilterName();
     }
 
+    public Set<String> getAlarmNames() {
+        return value.getAlarmNames();
+    }
+
+    public Set<String> getLocations() {
+        return value.getLocations();
+    }
+
+    public Set<String> getCategories() {
+        return value.getCategories();
+    }
+
     public void setFilterName(String filterName) {
         value.setFilterName(filterName);
     }
 
-    public void setAlarmNames(String[] names) {
+    public void setAlarmNames(Set<String> names) {
         value.setAlarmNames(names);
     }
 
-    public void setLocations(String[] locations) {
+    public void setLocations(Set<String> locations) {
         value.setLocations(locations);
     }
 
-    public void setCategories(String[] categories) {
+    public void setCategories(Set<String> categories) {
         value.setCategories(categories);
     }
 
@@ -94,7 +107,7 @@ public class CommandRecord {
                 '}';
     }
 
-public static class CommandKey {
+    public static class CommandKey {
     private String outputTopic;
 
     public CommandKey() {
@@ -149,14 +162,14 @@ public static class CommandKey {
 
 public static class CommandValue {
     private String filterName;
-    private String[] alarmNames;
-    private String[] locations;
-    private String[] categories;
+    private Set<String> alarmNames;
+    private Set<String> locations;
+    private Set<String> categories;
 
     public CommandValue() {
     }
 
-    public CommandValue(String filterName, String[] alarmNames, String[] locations, String[] categories) {
+    public CommandValue(String filterName, Set<String> alarmNames, Set<String> locations, Set<String> categories) {
         this.filterName = filterName;
         this.alarmNames = alarmNames;
         this.locations = locations;
@@ -171,27 +184,27 @@ public static class CommandValue {
         this.filterName = filterName;
     }
 
-    public String[] getAlarmNames() {
+    public Set<String> getAlarmNames() {
         return alarmNames;
     }
 
-    public void setAlarmNames(String[] alarmNames) {
+    public void setAlarmNames(Set<String> alarmNames) {
         this.alarmNames = alarmNames;
     }
 
-    public String[] getLocations() {
+    public Set<String> getLocations() {
         return locations;
     }
 
-    public void setLocations(String[] locations) {
+    public void setLocations(Set<String> locations) {
         this.locations = locations;
     }
 
-    public String[] getCategories() {
+    public Set<String> getCategories() {
         return categories;
     }
 
-    public void setCategories(String[] categories) {
+    public void setCategories(Set<String> categories) {
         this.categories = categories;
     }
 
