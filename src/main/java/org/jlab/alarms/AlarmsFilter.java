@@ -1,7 +1,11 @@
 package org.jlab.alarms;
 
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.connect.health.ConnectClusterDetails;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.processor.Cancellable;
@@ -9,9 +13,7 @@ import org.apache.kafka.streams.processor.ProcessorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static io.confluent.kafka.serializers.AbstractKafkaSchemaSerDeConfig.SCHEMA_REGISTRY_URL_CONFIG;
@@ -20,14 +22,31 @@ public class AlarmsFilter {
     private static final Logger log = LoggerFactory.getLogger(AlarmsFilter.class);
 
     public static final String INPUT_TOPIC = "active-alarms";
-    public static final String OUTPUT_TOPIC = "filtered-alarms";
 
     public static final SpecificAvroSerde<ActiveAlarmKey> INPUT_KEY_SERDE = new SpecificAvroSerde<>();
     public static final SpecificAvroSerde<ActiveAlarmValue> INPUT_VALUE_SERDE = new SpecificAvroSerde<>();
     public static final SpecificAvroSerde<ActiveAlarmKey> OUTPUT_KEY_SERDE = INPUT_KEY_SERDE;
     public static final SpecificAvroSerde<ActiveAlarmValue> OUTPUT_VALUE_SERDE = INPUT_VALUE_SERDE;
 
-    static Properties getStreamsConfig() {
+    static AdminClient admin;
+
+    final static Map<CommandRecord.CommandKey, KafkaStreams> streamsList = new ConcurrentHashMap<>();
+
+    final static CountDownLatch latch = new CountDownLatch(1);
+
+    static Properties getAdminConfig() {
+
+        String bootstrapServers = System.getenv("BOOTSTRAP_SERVERS");
+
+        bootstrapServers = (bootstrapServers == null) ? "localhost:9092" : bootstrapServers;
+
+        final Properties props = new Properties();
+        props.put(StreamsConfig.CLIENT_ID_CONFIG, "alarms-filter-admin");
+        props.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        return props;
+    }
+
+    static Properties getStreamsConfig(String outputTopic) {
 
         String bootstrapServers = System.getenv("BOOTSTRAP_SERVERS");
 
@@ -38,7 +57,8 @@ public class AlarmsFilter {
         registry = (registry == null) ? "http://localhost:8081" : registry;
 
         final Properties props = new Properties();
-        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "alarms-filter");
+        props.put("OUTPUT_TOPIC", outputTopic);
+        props.put(StreamsConfig.APPLICATION_ID_CONFIG, "alarms-filter-" + outputTopic);
         props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(StreamsConfig.CACHE_MAX_BYTES_BUFFERING_CONFIG, 0); // Disable caching
         props.put(SCHEMA_REGISTRY_URL_CONFIG, registry);
@@ -68,7 +88,7 @@ public class AlarmsFilter {
 
         final KStream<ActiveAlarmKey, ActiveAlarmValue> output = input.transform(new MsgTransformerFactory());
 
-        output.to(OUTPUT_TOPIC, Produced.with(OUTPUT_KEY_SERDE, OUTPUT_VALUE_SERDE));
+        output.to(props.getProperty("OUTPUT_TOPIC"), Produced.with(OUTPUT_KEY_SERDE, OUTPUT_VALUE_SERDE));
 
         return builder.build();
     }
@@ -121,10 +141,8 @@ public class AlarmsFilter {
      * @param args The command line arguments
      */
     public static void main(String[] args) {
-        final Properties props = getStreamsConfig();
-        final Topology top = createTopology(props);
-        final KafkaStreams streams = new KafkaStreams(top, props);
-        final CountDownLatch latch = new CountDownLatch(1);
+        Properties adminProps = getAdminConfig();
+        admin = AdminClient.create(adminProps);
 
         RegisteredAlarmsConsumer registeredConsumer = new RegisteredAlarmsConsumer();
 
@@ -132,10 +150,20 @@ public class AlarmsFilter {
 
         CommandTopicConsumer commandConsumer = new CommandTopicConsumer(new CommandChangeListener() {
             @Override
-            public void update() {
-                // 1. Stop Streams
-                // 2. Clear output topic
-                // 3. Restart streams with new commands
+            public void update(List<CommandRecord> changes) {
+                // 1. Stop Stream and destroy outputTopic
+                // 2. If set command, create new stream with new topic
+                try {
+                    for (CommandRecord command : changes) {
+                        unsetStream(command); // Always attempt to clear stream first when new command comes
+
+                        if (command.getValue() != null) { // Only set new stream if command value is not null
+                            setStream(command);
+                        }
+                    }
+                } catch(ExecutionException | InterruptedException e) {
+                    shutdown(e);
+                }
             }
         }, commandConfig);
 
@@ -145,17 +173,60 @@ public class AlarmsFilter {
         Runtime.getRuntime().addShutdownHook(new Thread("streams-shutdown-hook") {
             @Override
             public void run() {
-                streams.close();
-                latch.countDown();
+                shutdown(null);
             }
         });
 
         try {
-            streams.start();
             latch.await();
         } catch (final Throwable e) {
             System.exit(1);
         }
         System.exit(0);
+    }
+
+    private static void shutdown(Exception e) {
+        log.info("Shutting Down Streams");
+        if(e != null) {
+            e.printStackTrace();
+        }
+
+        for(KafkaStreams streams: streamsList.values()) {
+            streams.close(); // blocks...
+        }
+
+        if(admin != null) {
+            admin.close();
+        }
+
+        latch.countDown();
+    }
+
+    public static void setStream(CommandRecord command) {
+        log.debug("setStream: {}", command.getOutputTopic());
+
+        final Properties props = getStreamsConfig(command.getOutputTopic());
+        final Topology top = createTopology(props);
+        final KafkaStreams streams = new KafkaStreams(top, props);
+
+        streamsList.put(command.getKey(), streams);
+
+        streams.start();
+    }
+
+    public static void unsetStream(CommandRecord command) throws ExecutionException, InterruptedException {
+        log.debug("unsetStream: {}", command.getOutputTopic());
+        KafkaStreams streams = streamsList.remove(command.getKey());
+
+        if(streams != null) {
+            streams.close(); // blocks...
+        }
+
+        // Always attempt to destroy (cleanup topic) too
+        String topic = command.getOutputTopic();
+
+        DeleteTopicsResult result = admin.deleteTopics(Arrays.asList(topic));
+
+        result.all().get(); // blocks...
     }
 }

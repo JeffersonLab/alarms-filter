@@ -31,6 +31,7 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
     private final CommandChangeListener listener;
     private final Object config;
     private HashMap<CommandRecord.CommandKey, CommandRecord> commands = new HashMap<>();
+    private List<CommandRecord> changes = new ArrayList<>();
     private KafkaConsumer<String, String> consumer;
     private Map<Integer, TopicPartition> assignedPartitionsMap = new HashMap<>(); // empty map initially to avoid NPE
     private Map<TopicPartition, Long> endOffsets;
@@ -129,12 +130,18 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
         }
 
         log.trace("done with ChannelManager constructor");
+
+        if(!changes.isEmpty()) {
+            listener.update(new ArrayList<>(commands.values())); // Toss out old messages on first update
+            changes.clear();
+        }
     }
 
     private void commandUpdate(ConsumerRecord<String, String> record) {
         log.debug("Command update: {}={}", record.key(), record.value());
 
         CommandRecord.CommandKey key = null;
+        CommandRecord.CommandValue value = null;
 
         try {
             key = CommandRecord.CommandKey.fromJSON(record.key());
@@ -148,7 +155,6 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
         } else {
             log.info("Adding record: {}", key.getOutputTopic());
             CommandRecord cr = null;
-            CommandRecord.CommandValue value = null;
             try {
                 value = CommandRecord.CommandValue.fromJSON(record.value());
             } catch(JsonProcessingException e) {
@@ -157,6 +163,8 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
             cr = new CommandRecord(key, value);
             commands.put(key, cr);
         }
+
+        changes.add(new CommandRecord(key, value));
     }
 
     @Override
@@ -187,7 +195,8 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
                 } else { // No changes, settled
                     if(needUpdate) {
                         log.info("No changes (we've settled), so notify we have an update");
-                        listener.update();
+                        listener.update(new ArrayList<>(changes));
+                        changes.clear();
                         needUpdate = false;
                     }
                 }
@@ -203,6 +212,11 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
         log.trace("Change monitor thread exited cleanly");
     }
 
+    /**
+     * Returns the current set of commands with old messages removed.
+     *
+     * @return The current set of commands
+     */
     public Set<CommandRecord> getCommands() {
         log.debug("getCommands()");
 
