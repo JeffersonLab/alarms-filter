@@ -23,14 +23,17 @@ public class AlarmsFilterTest {
 
     @Before
     public void setup() {
-        final Properties streamsConfig = AlarmsFilter.getStreamsConfig();
+
+        final String outTopicName = "alarms-filter-test";
+
+        final Properties streamsConfig = AlarmsFilter.getStreamsConfig(outTopicName);
         streamsConfig.put(SCHEMA_REGISTRY_URL_CONFIG, "mock://testing");
         final Topology top = AlarmsFilter.createTopology(streamsConfig);
         testDriver = new TopologyTestDriver(top, streamsConfig);
 
         // setup test topics
         inputTopic = testDriver.createInputTopic(AlarmsFilter.INPUT_TOPIC, AlarmsFilter.INPUT_KEY_SERDE.serializer(), AlarmsFilter.INPUT_VALUE_SERDE.serializer());
-        outputTopic = testDriver.createOutputTopic(AlarmsFilter.OUTPUT_TOPIC, AlarmsFilter.OUTPUT_KEY_SERDE.deserializer(), AlarmsFilter.OUTPUT_VALUE_SERDE.deserializer());
+        outputTopic = testDriver.createOutputTopic(outTopicName, AlarmsFilter.OUTPUT_KEY_SERDE.deserializer(), AlarmsFilter.OUTPUT_VALUE_SERDE.deserializer());
 
         alarmKey1 = new ActiveAlarmKey();
         alarmKey2 = new ActiveAlarmKey();
