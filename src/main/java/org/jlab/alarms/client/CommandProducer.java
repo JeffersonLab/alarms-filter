@@ -10,22 +10,23 @@ public class CommandProducer {
     public static void main(String[] args) {
         String servers = args[0];
         String commandTopic = args[1];
-        String filterName = args[2];
+        String outTopic = args[2];
         String unset = args[3];
-        String outTopic = args[4];
+        String filterName = args[4];
         String alarmNameCsv = args[5];
         String locationCsv = args[6];
         String categoryCsv = args[7];
 
-        String key = "{\"name\":\"" + filterName + "\"}";
+        CommandRecord record = new CommandRecord();
+        record.setOutputTopic(outTopic);
+
+        String key = record.getKey().toJSON();
         String value;
 
         if("true".equals(unset)) {
             value = null;
         } else {
-            CommandRecord record = new CommandRecord();
             record.setFilterName(filterName);
-            record.setOutputTopic(outTopic);
             record.setAlarmNames(fromCsv(alarmNameCsv));
             record.setLocations(fromCsv(locationCsv));
             record.setCategories(fromCsv(categoryCsv));

@@ -27,11 +27,6 @@ public class AlarmsFilter {
     public static final SpecificAvroSerde<ActiveAlarmKey> OUTPUT_KEY_SERDE = INPUT_KEY_SERDE;
     public static final SpecificAvroSerde<ActiveAlarmValue> OUTPUT_VALUE_SERDE = INPUT_VALUE_SERDE;
 
-    /**
-     * Enumerations of all channels with expiration timers, mapped to the cancellable Executor handle.
-     */
-    public static Map<String, Cancellable> channelHandleMap = new ConcurrentHashMap<>();
-
     static Properties getStreamsConfig() {
 
         String bootstrapServers = System.getenv("BOOTSTRAP_SERVERS");

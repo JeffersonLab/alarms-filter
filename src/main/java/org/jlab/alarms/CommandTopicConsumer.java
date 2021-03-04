@@ -143,10 +143,10 @@ public class CommandTopicConsumer extends Thread implements AutoCloseable {
         }
 
         if(record.value() == null) {
-            log.info("Removing record: {}", key.getName());
+            log.info("Removing record: {}", key.getOutputTopic());
             commands.remove(key);
         } else {
-            log.info("Adding record: {}", key.getName());
+            log.info("Adding record: {}", key.getOutputTopic());
             CommandRecord cr = null;
             CommandRecord.CommandValue value = null;
             try {

@@ -61,4 +61,4 @@ LOG4J_CONF=$APP_HOME/config
 
 RUN_CP="$FILTER_JAR:$CLIENTS_JAR:$SLF4J_API:$SLF4J_IMP:$LOG4J_IMP:$LOG4J_CONF:$JACK_CORE:$JACK_BIND:$JACK_ANN"
 
-java -Dlog.dir=$APP_HOME/logs -cp $RUN_CP org.jlab.alarms.client.CommandProducer $BOOTSTRAP_SERVERS filter-commands "$filterName" "$unset" "$outTopic" "$alarmNameCsv" "$locationCsv" "$categoryCsv"
+java -Dlog.dir=$APP_HOME/logs -cp $RUN_CP org.jlab.alarms.client.CommandProducer $BOOTSTRAP_SERVERS filter-commands "$outTopic" "$unset" "$filterName" "$alarmNameCsv" "$locationCsv" "$categoryCsv"

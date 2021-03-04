@@ -44,15 +44,15 @@ public class CommandRecord {
     }
 
     public String getFilterName() {
-        return key.getName();
+        return value.getFilterName();
     }
 
-    public void setFilterName(String name) {
-        key.setName(name);
+    public void setFilterName(String filterName) {
+        value.setFilterName(filterName);
     }
 
     public void setAlarmNames(String[] names) {
-        value.setNames(names);
+        value.setAlarmNames(names);
     }
 
     public void setLocations(String[] locations) {
@@ -64,11 +64,11 @@ public class CommandRecord {
     }
 
     public void setOutputTopic(String outTopic) {
-        value.setOutputTopic(outTopic);
+        key.setOutputTopic(outTopic);
     }
 
     public String getOutputTopic() {
-        return value.getOutputTopic();
+        return key.getOutputTopic();
     }
 
 
@@ -89,29 +89,28 @@ public class CommandRecord {
     @Override
     public String toString() {
         return "CommandRecord{" +
-                "name='" + key.getName() + '\'' +
-                ", outputTopic='" + value.getOutputTopic() + '\'' +
-                ", names='" + value.getNames() + '\'' +
+                "outputTopic='" + key.getOutputTopic() + '\'' +
+                ", filterName='" + value.getFilterName() + '\'' +
                 '}';
     }
 
 public static class CommandKey {
-    private String name; // filter name
+    private String outputTopic;
 
     public CommandKey() {
 
     }
 
-    public CommandKey(String name) {
-        this.name = name;
+    public CommandKey(String outputTopic) {
+        this.outputTopic = outputTopic;
     }
 
-    public String getName() {
-        return name;
+    public String getOutputTopic() {
+        return outputTopic;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setOutputTopic(String outputTopic) {
+        this.outputTopic = outputTopic;
     }
 
     @Override
@@ -119,12 +118,12 @@ public static class CommandKey {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CommandKey key = (CommandKey) o;
-        return Objects.equals(name, key.name);
+        return Objects.equals(outputTopic, key.outputTopic);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name);
+        return Objects.hash(outputTopic);
     }
 
     public String toJSON() {
@@ -149,35 +148,35 @@ public static class CommandKey {
 }
 
 public static class CommandValue {
-    private String outputTopic;
-    private String[] names; // alarm names
+    private String filterName;
+    private String[] alarmNames;
     private String[] locations;
     private String[] categories;
 
     public CommandValue() {
     }
 
-    public CommandValue(String outputTopic, String[] names, String[] locations, String[] categories) {
-        this.outputTopic = outputTopic;
-        this.names = names;
+    public CommandValue(String filterName, String[] alarmNames, String[] locations, String[] categories) {
+        this.filterName = filterName;
+        this.alarmNames = alarmNames;
         this.locations = locations;
         this.categories = categories;
     }
 
-    public String getOutputTopic() {
-        return outputTopic;
+    public String getFilterName() {
+        return filterName;
     }
 
-    public void setOutputTopic(String outputTopic) {
-        this.outputTopic = outputTopic;
+    public void setFilterName(String filterName) {
+        this.filterName = filterName;
     }
 
-    public String[] getNames() {
-        return names;
+    public String[] getAlarmNames() {
+        return alarmNames;
     }
 
-    public void setNames(String[] names) {
-        this.names = names;
+    public void setAlarmNames(String[] alarmNames) {
+        this.alarmNames = alarmNames;
     }
 
     public String[] getLocations() {
