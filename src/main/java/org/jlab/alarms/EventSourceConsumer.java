@@ -39,8 +39,6 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         Properties props = new Properties();
         props.put("bootstrap.servers", config.getString(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS));
         props.put("group.id", config.getString(EventSourceConfig.EVENT_SOURCE_GROUP));
-        props.put("enable.auto.commit", "true");
-        props.put("auto.commit.interval.ms", "1000");
         props.put("key.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER));
         props.put("value.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER));
         props.put("schema.registry.url", config.getString(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL));
@@ -102,7 +100,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
                 endOffset = endOffsets.get(partitions.iterator().next()); // Exactly one partition verified above
 
                 if(endOffset == 0) {
-                    log.info("Empty topic to begin with");
+                    log.debug("Empty topic to begin with");
                     endReached = true;
                 }
             }
@@ -120,7 +118,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
             for (ConsumerRecord<K, V> record : records) {
                 updateState(record);
 
-                log.trace("Looking for last index: {}, found: {}", endOffset, record.offset() + 1);
+                log.debug("Looking for last index: {}, found: {}", endOffset, record.offset() + 1);
 
                 if(record.offset() + 1 == endOffset) {
                     log.debug("end of partition {} reached", record.partition());
@@ -147,7 +145,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
             notifyListeners();
         }
 
-        log.trace("Done with EventSourceConsumer constructor");
+        log.debug("Done with EventSourceConsumer init");
     }
 
     private void monitorChanges() {
@@ -166,11 +164,11 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
                     updateState(record);
                 }
 
-                log.info("Change in command list: request update once settled");
+                log.debug("Change in command list: request update once settled");
                 hasChanges = true;
             } else {
                 if(hasChanges) {
-                    log.info("Flushing changes since we've settled (we had a poll with no changes)");
+                    log.debug("Flushing changes since we've settled (we had a poll with no changes)");
                     notifyListeners();
                     hasChanges = false;
                     pollsWithChangesSinceLastFlush = 0;
@@ -179,7 +177,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
 
             // This is an escape hatch in case poll consistently returns changes; otherwise we'd never flush!
             if(pollsWithChangesSinceLastFlush >= config.getLong(EventSourceConfig.EVENT_SOURCE_MAX_POLL_BEFORE_FLUSH)) {
-                log.info("Flushing changes due to max poll with changes");
+                log.debug("Flushing changes due to max poll with changes");
                 notifyListeners();
                 hasChanges = false;
                 pollsWithChangesSinceLastFlush = 0;
@@ -205,10 +203,10 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         changes.add(esr);
 
         if(record.value() == null) {
-            log.info("Removing record: {}", record.key());
+            log.debug("Removing record: {}", record.key());
             state.remove(record.key());
         } else {
-            log.info("Adding record: {}", record.key());
+            log.debug("Adding record: {}", record.key());
             state.put(record.key(), esr);
         }
     }
