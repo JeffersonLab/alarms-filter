@@ -138,12 +138,10 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
             }
         }
 
-        if(!changes.isEmpty()) {
-            // Toss out old messages on first update
-            changes.clear();
-            changes.addAll(state.values());
-            notifyListeners();
-        }
+        // Toss out old messages on first update
+        changes.clear();
+        changes.addAll(state.values());
+        notifyListeners(); // we always notify even if changes is empty - this tells clients initial state
 
         log.debug("Done with EventSourceConsumer init");
     }
