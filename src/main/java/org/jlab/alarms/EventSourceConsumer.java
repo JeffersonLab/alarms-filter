@@ -31,18 +31,13 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
     private final HashMap<K, EventSourceRecord<K, V>> state = new HashMap<>();
     private final List<EventSourceRecord<K, V>> changes = new ArrayList<>();
 
-    public EventSourceConsumer(EventSourceConfig config) {
+    public EventSourceConsumer(Properties props) {
 
-        this.config = config;
+        config = new EventSourceConfig(props);
 
-        Properties props = new Properties();
-        props.put("bootstrap.servers", config.getString(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS));
-        props.put("group.id", config.getString(EventSourceConfig.EVENT_SOURCE_GROUP));
-        props.put("key.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER));
-        props.put("value.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER));
-        props.put("schema.registry.url", config.getString(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL));
+        Map<String, Object> withDefaults = config.valuesWithPrefixOverride("event.source");
 
-        consumer = new KafkaConsumer<>(props);
+        consumer = new KafkaConsumer<K, V>(withDefaults);
     }
 
     public void addListener(EventSourceListener<K, V> listener) {

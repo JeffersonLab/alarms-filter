@@ -1,17 +1,9 @@
 package org.jlab.alarms.client;
 
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.TopicPartition;
 import org.jlab.alarms.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
@@ -25,27 +17,25 @@ public class RegisteredConsumer {
         final Properties props = new Properties();
 
         props.put(EventSourceConfig.EVENT_SOURCE_TOPIC, "registered-alarms");
-        props.put(EventSourceConfig.EVENT_SOURCE_GROUP, "RegisteredConsumer");
         props.put(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS, servers);
         props.put(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL, "http://registry:8081");
 
-        final EventSourceConfig config = new EventSourceConfig(props);
-        final EventSourceConsumer<String, RegisteredAlarm> con = new EventSourceConsumer<>(config);
+        final EventSourceConsumer<String, RegisteredAlarm> consumer = new EventSourceConsumer<>(props);
 
-        con.addListener(new EventSourceListener<String, RegisteredAlarm>() {
+        consumer.addListener(new EventSourceListener<>() {
             @Override
             public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
-                for(EventSourceRecord<String, RegisteredAlarm> record: changes) {
+                for (EventSourceRecord<String, RegisteredAlarm> record : changes) {
                     System.out.println(record);
                 }
-                con.close();
+                consumer.close();
             }
         });
 
-        con.start();
-        con.join(); // block until first update, which contains current state of topic
+        consumer.start();
+        consumer.join(); // block until first update, which contains current state of topic
     }
 }
 

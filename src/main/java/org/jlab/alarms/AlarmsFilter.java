@@ -38,7 +38,7 @@ public class AlarmsFilter {
 
     final static CountDownLatch latch = new CountDownLatch(1);
 
-    static EventSourceConfig getRegisteredConfig() {
+    static Properties getRegisteredConfig() {
 
         String bootstrapServers = System.getenv("BOOTSTRAP_SERVERS");
 
@@ -52,7 +52,7 @@ public class AlarmsFilter {
         props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL, "http://registry:8081");
 
-        return new EventSourceConfig(props);
+        return props;
     }
 
     static Properties getAdminConfig() {
@@ -203,8 +203,8 @@ public class AlarmsFilter {
         Properties adminProps = getAdminConfig();
         admin = AdminClient.create(adminProps);
 
-        final EventSourceConfig config = getRegisteredConfig();
-        registeredConsumer = new EventSourceConsumer<>(config);
+        Properties registeredProps = getRegisteredConfig();
+        registeredConsumer = new EventSourceConsumer<>(registeredProps);
 
         registeredConsumer.addListener(new EventSourceListener<String, RegisteredAlarm>() {
             @Override

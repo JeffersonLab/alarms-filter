@@ -7,13 +7,15 @@ import java.util.Map;
 
 public class EventSourceConfig extends AbstractConfig {
     public static final String EVENT_SOURCE_TOPIC = "event.source.topic";
-    public static final String EVENT_SOURCE_GROUP = "event.source.group";
     public static final String EVENT_SOURCE_POLL_MILLIS = "event.source.poll.millis";
-    public static final String EVENT_SOURCE_BOOTSTRAP_SERVERS = "event.source.bootstrap.servers";
     public static final String EVENT_SOURCE_MAX_POLL_BEFORE_FLUSH = "event.source.max.poll.before.flush";
-    public static final String EVENT_SOURCE_KEY_DESERIALIZER = "event.source.key.deserializer";
-    public static final String EVENT_SOURCE_VALUE_DESERIALIZER = "event.source.value.deserializer";
-    public static final String EVENT_SOURCE_SCHEMA_REGISTRY_URL = "event.source.schema.registry.url";
+
+    // Use the same identifiers as ConsumerConfig as we'll pass 'em right on through
+    public static final String EVENT_SOURCE_GROUP = "group.id";
+    public static final String EVENT_SOURCE_BOOTSTRAP_SERVERS = "bootstrap.servers";
+    public static final String EVENT_SOURCE_KEY_DESERIALIZER = "key.deserializer";
+    public static final String EVENT_SOURCE_VALUE_DESERIALIZER = "value.deserializer";
+    public static final String EVENT_SOURCE_SCHEMA_REGISTRY_URL = "schema.registry.url";
 
     public EventSourceConfig(Map originals) {
         super(configDef(), originals, false);
