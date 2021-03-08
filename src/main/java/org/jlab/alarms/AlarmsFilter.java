@@ -28,6 +28,10 @@ public class AlarmsFilter {
 
     static AdminClient admin;
 
+    static EventSourceConsumer<String, RegisteredAlarm> registeredConsumer;
+
+    static CommandTopicConsumer commandConsumer;
+
     final static Map<CommandRecord.CommandKey, KafkaStreams> streamsList = new ConcurrentHashMap<>();
 
     final static Map<String, RegisteredAlarm> registeredAlarms = new ConcurrentHashMap<>();
@@ -182,7 +186,7 @@ public class AlarmsFilter {
         Properties adminProps = getAdminConfig();
         admin = AdminClient.create(adminProps);
 
-        EventSourceConsumer<String, RegisteredAlarm> registeredConsumer = new EventSourceConsumer<>(new EventSourceConfig(new HashMap<>()));
+        registeredConsumer = new EventSourceConsumer<>(new EventSourceConfig(new HashMap<>()));
 
         registeredConsumer.addListener(new EventSourceListener<String, RegisteredAlarm>() {
             @Override
@@ -201,7 +205,7 @@ public class AlarmsFilter {
 
         CommandConsumerConfig commandConfig = new CommandConsumerConfig(new HashMap<>());
 
-        CommandTopicConsumer commandConsumer = new CommandTopicConsumer(new CommandChangeListener() {
+        commandConsumer = new CommandTopicConsumer(new CommandChangeListener() {
             @Override
             public void update(List<CommandRecord> changes) {
                 // 1. Stop Stream and destroy outputTopic
@@ -250,6 +254,14 @@ public class AlarmsFilter {
 
         if(admin != null) {
             admin.close();
+        }
+
+        if(commandConsumer != null) {
+            commandConsumer.close();
+        }
+
+        if(registeredConsumer != null) {
+            registeredConsumer.close();
         }
 
         latch.countDown();

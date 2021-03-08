@@ -11,6 +11,8 @@ public class EventSourceConfig extends AbstractConfig {
     public static final String EVENT_SOURCE_POLL_MILLIS = "event.source.poll.millis";
     public static final String EVENT_SOURCE_BOOTSTRAP_SERVERS = "event.source.bootstrap.servers";
     public static final String EVENT_SOURCE_MAX_POLL_BEFORE_FLUSH = "event.source.max.poll.before.flush";
+    public static final String EVENT_SOURCE_KEY_DESERIALIZER = "event.source.key.deserializer";
+    public static final String EVENT_SOURCE_VALUE_DESERIALIZER = "event.source.value.deserializer";
 
     public EventSourceConfig(Map originals) {
         super(configDef(), originals, false);
@@ -42,6 +44,16 @@ public class EventSourceConfig extends AbstractConfig {
                         ConfigDef.Type.STRING,
                         "localhost:9092",
                         ConfigDef.Importance.HIGH,
-                        "Comma-separated list of host and port pairs that are the addresses of the Kafka brokers used to query the EVENT_SOURCE_TOPIC");
+                        "Comma-separated list of host and port pairs that are the addresses of the Kafka brokers used to query the EVENT_SOURCE_TOPIC")
+                .define(EVENT_SOURCE_KEY_DESERIALIZER,
+                        ConfigDef.Type.STRING,
+                        "org.apache.kafka.common.serialization.StringDeserializer",
+                        ConfigDef.Importance.HIGH,
+                        "Class name of deserializer to use for the key")
+                .define(EVENT_SOURCE_VALUE_DESERIALIZER,
+                        ConfigDef.Type.STRING,
+                        "org.apache.kafka.common.serialization.StringDeserializer",
+                        ConfigDef.Importance.HIGH,
+                        "Class name of deserializer to use for the value");
     }
 }

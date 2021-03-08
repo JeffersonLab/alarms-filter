@@ -5,12 +5,14 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
 
@@ -22,6 +24,8 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
 
     private long endOffset = 0;
     private boolean endReached = false;
+
+    private AtomicReference<CONSUMER_STATE> consumerState = new AtomicReference<>(CONSUMER_STATE.INITIALIZING);
 
     // Both current state and changes since last listener notification are tracked
     private final HashMap<K, EventSourceRecord<K, V>> state = new HashMap<>();
@@ -36,8 +40,8 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         props.put("group.id", config.getString(EventSourceConfig.EVENT_SOURCE_GROUP));
         props.put("enable.auto.commit", "true");
         props.put("auto.commit.interval.ms", "1000");
-        props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer"); // TODO: This must be configurable
-        props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put("key.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER));
+        props.put("value.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER));
 
         consumer = new KafkaConsumer<>(props);
     }
@@ -51,12 +55,22 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
     }
 
     public void start() {
-        // TODO: Maintain state machine to ensure only call start once!
-        try {
-            init();
-            monitorChanges();
-        } finally {
-            consumer.close();
+        boolean transitioned = consumerState.compareAndSet(CONSUMER_STATE.INITIALIZING, CONSUMER_STATE.RUNNING);
+
+        if(!transitioned) {
+            log.debug("We must already be closed!");
+        }
+
+        if(transitioned) { // Only allow the first time!
+            try {
+                init();
+                monitorChanges();
+            } catch(WakeupException e) {
+                // We expect this when CLOSED (since we call consumer.wakeup()), else throw
+                if(consumerState.get() != CONSUMER_STATE.CLOSED) throw e;
+            } finally {
+                consumer.close();
+            }
         }
     }
 
@@ -91,7 +105,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         // Note: first poll triggers seek to beginning (so some empty polls are expected)
         int emptyPollCount = 0;
 
-        while(!endReached) {
+        while(!endReached && consumerState.get() == CONSUMER_STATE.RUNNING) {
 
             ConsumerRecords<K, V> records = consumer.poll(Duration.ofMillis(config.getLong(EventSourceConfig.EVENT_SOURCE_POLL_MILLIS)));
 
@@ -137,9 +151,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         int pollsWithChangesSinceLastFlush = 0;
         boolean hasChanges = false;
 
-        boolean monitor = true;
-
-        while(monitor) {
+        while(consumerState.get() == CONSUMER_STATE.RUNNING) {
             log.debug("polling for changes");
             ConsumerRecords<K, V> records = consumer.poll(Duration.ofMillis(config.getLong(EventSourceConfig.EVENT_SOURCE_POLL_MILLIS)));
 
@@ -196,7 +208,17 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
+        CONSUMER_STATE previousState = consumerState.getAndSet(CONSUMER_STATE.CLOSED);
 
+        if(previousState == CONSUMER_STATE.INITIALIZING) { // start() never called!
+            consumer.close();
+        } else {
+            consumer.wakeup(); // tap on shoulder and it'll eventually notice consumer state now CLOSED
+        }
+    }
+
+    private enum CONSUMER_STATE {
+        INITIALIZING, RUNNING, CLOSED
     }
 }
