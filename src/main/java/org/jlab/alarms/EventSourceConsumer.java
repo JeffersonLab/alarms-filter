@@ -1,6 +1,5 @@
 package org.jlab.alarms;
 
-import jdk.jfr.Event;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
