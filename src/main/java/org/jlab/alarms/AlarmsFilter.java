@@ -182,7 +182,9 @@ public class AlarmsFilter {
         Properties adminProps = getAdminConfig();
         admin = AdminClient.create(adminProps);
 
-        EventSourceConsumer registeredConsumer = new EventSourceConsumer<EventSourceRecord<String, RegisteredAlarm>>(new EventSourceConfig(new HashMap<>()), new EventSourceListener<EventSourceRecord<String, RegisteredAlarm>>() {
+        EventSourceConsumer<String, RegisteredAlarm> registeredConsumer = new EventSourceConsumer<>(new EventSourceConfig(new HashMap<>()));
+
+        registeredConsumer.addListener(new EventSourceListener<String, RegisteredAlarm>() {
             @Override
             public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
                 for(EventSourceRecord<String, RegisteredAlarm> record: changes) {
@@ -194,6 +196,8 @@ public class AlarmsFilter {
                 }
             }
         });
+
+        registeredConsumer.start();
 
         CommandConsumerConfig commandConfig = new CommandConsumerConfig(new HashMap<>());
 

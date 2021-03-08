@@ -6,10 +6,11 @@ import org.apache.kafka.common.config.ConfigDef;
 import java.util.Map;
 
 public class EventSourceConfig extends AbstractConfig {
-    public static final String COMMAND_TOPIC = "command.topic";
-    public static final String COMMAND_GROUP = "command.group";
-    public static final String COMMAND_POLL_MILLIS = "command.poll.millis";
-    public static final String COMMAND_BOOTSTRAP_SERVERS = "command.bootstrap.servers";
+    public static final String EVENT_SOURCE_TOPIC = "event.source.topic";
+    public static final String EVENT_SOURCE_GROUP = "event.source.group";
+    public static final String EVENT_SOURCE_POLL_MILLIS = "event.source.poll.millis";
+    public static final String EVENT_SOURCE_BOOTSTRAP_SERVERS = "event.source.bootstrap.servers";
+    public static final String EVENT_SOURCE_MAX_POLL_BEFORE_FLUSH = "event.source.max.poll.before.flush";
 
     public EventSourceConfig(Map originals) {
         super(configDef(), originals, false);
@@ -17,25 +18,30 @@ public class EventSourceConfig extends AbstractConfig {
 
     protected static ConfigDef configDef() {
         return new ConfigDef()
-                .define(COMMAND_TOPIC,
+                .define(EVENT_SOURCE_TOPIC,
                         ConfigDef.Type.STRING,
-                        "filter-commands",
+                        "event-source",
                         ConfigDef.Importance.HIGH,
-                        "Name of Kafka topic to monitor for filter commands")
-                .define(COMMAND_GROUP,
+                        "Name of Kafka event source topic to monitor")
+                .define(EVENT_SOURCE_GROUP,
                         ConfigDef.Type.STRING,
-                        "alarms-filter",
+                        "event-source",
                         ConfigDef.Importance.HIGH,
-                        "Name of Kafka consumer group to use when monitoring the COMMAND_TOPIC")
-                .define(COMMAND_POLL_MILLIS,
+                        "Name of Kafka consumer group to use when monitoring the EVENT_SOURCE_TOPIC")
+                .define(EVENT_SOURCE_POLL_MILLIS,
                         ConfigDef.Type.LONG,
-                        5000l,
+                        1000l,
                         ConfigDef.Importance.HIGH,
-                        "Milliseconds between polls for command topic changes - update delay is twice this value since the command thread waits for 'no changes' poll response before requesting update")
-                .define(COMMAND_BOOTSTRAP_SERVERS,
+                        "Milliseconds between polls for topic changes - notification delay is EVENT_SOURCE_MAX_POLL_BEFORE_FLUSH times this value with a constant stream of changes, or twice this value when changes are intermittent since the consumer thread waits for 'no changes' poll response before notifying listeners")
+                .define(EVENT_SOURCE_MAX_POLL_BEFORE_FLUSH,
+                        ConfigDef.Type.LONG,
+                        5l,
+                        ConfigDef.Importance.HIGH,
+                        "Max number of polls before forcing a flush - ensures changes are flushed in case of a constant stream of changes occurring more frequently than poll duration.  Set to 1 to force flush after every poll with changes")
+                .define(EVENT_SOURCE_BOOTSTRAP_SERVERS,
                         ConfigDef.Type.STRING,
                         "localhost:9092",
                         ConfigDef.Importance.HIGH,
-                        "Comma-separated list of host and port pairs that are the addresses of the Kafka brokers used to query the command topic");
+                        "Comma-separated list of host and port pairs that are the addresses of the Kafka brokers used to query the EVENT_SOURCE_TOPIC");
     }
 }
