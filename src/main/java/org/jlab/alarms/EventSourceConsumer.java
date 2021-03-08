@@ -161,7 +161,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
                     updateState(record);
                 }
 
-                log.debug("Change in command list: request update once settled");
+                log.debug("Change in topic: request update once settled");
                 hasChanges = true;
             } else {
                 if(hasChanges) {
