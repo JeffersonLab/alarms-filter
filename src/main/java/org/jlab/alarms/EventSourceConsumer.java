@@ -1,5 +1,6 @@
 package org.jlab.alarms;
 
+import jdk.jfr.Event;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -42,6 +43,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         props.put("auto.commit.interval.ms", "1000");
         props.put("key.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER));
         props.put("value.deserializer", config.getString(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER));
+        props.put("schema.registry.url", config.getString(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL));
 
         consumer = new KafkaConsumer<>(props);
     }
@@ -75,6 +77,8 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
     }
 
     private void init() {
+        log.debug("subscribing to topic: {}", config.getString(EventSourceConfig.EVENT_SOURCE_TOPIC));
+
         consumer.subscribe(Collections.singletonList(config.getString(EventSourceConfig.EVENT_SOURCE_TOPIC)), new ConsumerRebalanceListener() {
 
             @Override
@@ -93,7 +97,9 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
 
                 Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
 
-                endOffset = endOffsets.get(0); // Exactly one partition verified above
+                System.out.println("endOffsets: " + endOffsets);
+
+                endOffset = endOffsets.get(partitions.iterator().next()); // Exactly one partition verified above
 
                 if(endOffset == 0) {
                     log.info("Empty topic to begin with");
