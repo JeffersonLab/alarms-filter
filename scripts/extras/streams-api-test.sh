@@ -24,9 +24,6 @@ EXTRA7=`ls $APP_HOME/lib/jersey-common-*`
 STREAMS1=`ls $APP_HOME/lib/kafka-streams-2.*.jar`
 STREAMS2=`ls $APP_HOME/lib/kafka-streams-avro-serde-*`
 
-echo "STREAMS1: $STREAMS1"
-echo "STREAMS2: $STREAMS2"
-
 RUN_CP="$FILTER_JAR:$CLIENTS_JAR:$SLF4J_API:$SLF4J_IMP:$LOG4J_IMP:$LOG4J_CONF:$JACK_CORE:$JACK_BIND:$JACK_ANN:$EXTRA:$EXTRA2:$EXTRA3:$EXTRA4:$EXTRA5:$EXTRA6:$EXTRA7:$STREAMS1:$STREAMS2"
 
 java -Dlog.dir=$APP_HOME/logs -Dlog4j.configuration="file://$APP_HOME/config/log4j-client.properties" -cp $RUN_CP org.jlab.alarms.client.extras.StreamsAPITest $BOOTSTRAP_SERVERS
