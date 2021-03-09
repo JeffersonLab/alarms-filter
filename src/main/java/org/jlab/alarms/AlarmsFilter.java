@@ -1,5 +1,6 @@
 package org.jlab.alarms;
 
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import io.confluent.kafka.streams.serdes.avro.SpecificAvroSerde;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
@@ -51,6 +52,7 @@ public class AlarmsFilter {
         props.put(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL, "http://registry:8081");
+        props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG,"true");
 
         return props;
     }
@@ -206,7 +208,16 @@ public class AlarmsFilter {
         Properties registeredProps = getRegisteredConfig();
         registeredConsumer = new EventSourceConsumer<>(registeredProps);
 
-        registeredConsumer.addListener(new EventSourceListener<String, RegisteredAlarm>() {
+        registeredConsumer.addListener(new EventSourceListener<>() {
+            @Override
+            public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
+                for (EventSourceRecord<String, RegisteredAlarm> record : changes) {
+                    System.out.println(record);
+                }
+            }
+        });
+
+        /*registeredConsumer.addListener(new EventSourceListener<>() {
             @Override
             public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
                 for(EventSourceRecord<String, RegisteredAlarm> record: changes) {
@@ -217,7 +228,7 @@ public class AlarmsFilter {
                     }
                 }
             }
-        });
+        });*/
 
         registeredConsumer.start();
 
