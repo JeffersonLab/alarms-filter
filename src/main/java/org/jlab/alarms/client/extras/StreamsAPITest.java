@@ -10,6 +10,7 @@ import org.apache.kafka.streams.Topology;
 import org.apache.kafka.streams.kstream.Consumed;
 import org.apache.kafka.streams.kstream.ForeachAction;
 import org.apache.kafka.streams.kstream.KStream;
+import org.apache.kafka.streams.kstream.KTable;
 import org.jlab.alarms.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,10 +64,12 @@ public class StreamsAPITest {
         INPUT_KEY_SERDE.configure(config, true);
         INPUT_VALUE_SERDE.configure(config, false);
 
+        // KTable removes duplicate keys, I hope!
+        final KTable<String, RegisteredAlarm> input = builder.table(INPUT_TOPIC, Consumed.with(INPUT_KEY_SERDE, INPUT_VALUE_SERDE));
 
-        final KStream<String, RegisteredAlarm> input = builder.stream(INPUT_TOPIC, Consumed.with(INPUT_KEY_SERDE, INPUT_VALUE_SERDE));
+        //final KStream<String, RegisteredAlarm> input = builder.stream(INPUT_TOPIC, Consumed.with(INPUT_KEY_SERDE, INPUT_VALUE_SERDE));
 
-        input.foreach(new ForeachAction<String, RegisteredAlarm>() {
+        input.toStream().foreach(new ForeachAction<String, RegisteredAlarm>() {
             @Override
             public void apply(String key, RegisteredAlarm value) {
                 System.out.println(key + "=" + value);
