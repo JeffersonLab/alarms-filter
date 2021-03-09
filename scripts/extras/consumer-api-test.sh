@@ -4,7 +4,7 @@
 
 CWD=$(readlink -f "$(dirname "$0")")
 
-APP_HOME=$CWD/..
+APP_HOME=$CWD/../..
 
 FILTER_JAR=`ls $APP_HOME/lib/alarms-filter*`
 CLIENTS_JAR=`ls $APP_HOME/lib/kafka-clients-*`
@@ -24,4 +24,4 @@ EXTRA7=`ls $APP_HOME/lib/jersey-common-*`
 
 RUN_CP="$FILTER_JAR:$CLIENTS_JAR:$SLF4J_API:$SLF4J_IMP:$LOG4J_IMP:$LOG4J_CONF:$JACK_CORE:$JACK_BIND:$JACK_ANN:$EXTRA:$EXTRA2:$EXTRA3:$EXTRA4:$EXTRA5:$EXTRA6:$EXTRA7"
 
-java -Dlog.dir=$APP_HOME/logs -Dlog4j.configuration="file://$APP_HOME/config/log4j-client.properties" -cp $RUN_CP org.jlab.alarms.client.RegisteredConsumer $BOOTSTRAP_SERVERS
+java -Dlog.dir=$APP_HOME/logs -Dlog4j.configuration="file://$APP_HOME/config/log4j-client.properties" -cp $RUN_CP org.jlab.alarms.client.extras.ConsumerAPITest $BOOTSTRAP_SERVERS
