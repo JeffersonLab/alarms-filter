@@ -7,6 +7,7 @@ A [Kafka Streams](https://kafka.apache.org/documentation/streams/) application t
  - [Configure](https://github.com/JeffersonLab/alarms-filter#configure)
  - [Deploy](https://github.com/JeffersonLab/alarms-filter#deploy)
  - [Docker](https://github.com/JeffersonLab/alarms-filter#docker)
+ - [See Also](https://github.com/JeffersonLab/alarms-filter#see-also)
  ---
 
 ## Quick Start with Compose 
@@ -70,3 +71,6 @@ bin/alarms-filter.bat
 docker pull slominskir/alarms-filter
 ```
 Image hosted on [DockerHub](https://hub.docker.com/r/slominskir/alarms-filter)
+
+## See Also
+ - [Developer Notes](https://github.com/JeffersonLab/alarms-filter/wiki/Developer-Notes)
