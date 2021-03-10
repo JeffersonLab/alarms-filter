@@ -25,7 +25,7 @@ public class CommandConsumer {
         props.put("key.deserializer",  FilterCommandSerde.key().deserializer().getClass().getName());
         props.put("value.deserializer", FilterCommandSerde.value().deserializer().getClass().getName());
 
-         TopicInfo info = new TopicInfo();
+        TopicInfo info = new TopicInfo();
 
         try(KafkaConsumer<CommandRecordKey, CommandRecordValue> consumer = new KafkaConsumer<>(props)) {
                 consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceListener() {
