@@ -34,10 +34,10 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_HOST_NAME: registry
 
-  console:
-    image: slominskir/kafka-alarm-system:1.4.0
-    hostname: console
-    container_name: console
+  jaws:
+    image: slominskir/jaws:2.0.0
+    hostname: jaws
+    container_name: jaws
     depends_on:
       - zookeeper
       - kafka
@@ -45,6 +45,7 @@ services:
     environment:
       BOOTSTRAP_SERVERS: "kafka:9092"
       SCHEMA_REGISTRY: "http://registry:8081"
+      ALARM_DEFINITIONS: "alarm1|channel1|INJ|RF|/|/,alarm2|channel2|INJ|RF|/|/,alarm3|channel3|INJ|RF|/|/"
 
   filter:
     build:
@@ -58,7 +59,7 @@ services:
       - zookeeper
       - kafka
       - registry
-      - console
+      - jaws
     environment:
       BOOTSTRAP_SERVERS: "kafka:9092"
       SCHEMA_REGISTRY: "http://registry:8081"
