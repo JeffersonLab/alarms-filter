@@ -3,6 +3,7 @@ A [Kafka Streams](https://kafka.apache.org/documentation/streams/) application t
 
 ---
  - [Quick Start with Compose](https://github.com/JeffersonLab/alarms-filter#quick-start-with-compose)
+ - [Filter API](https://github.com/JeffersonLab/alarms-filter#filter-api)
  - [Build](https://github.com/JeffersonLab/alarms-filter#build)
  - [Configure](https://github.com/JeffersonLab/alarms-filter#configure)
  - [Deploy](https://github.com/JeffersonLab/alarms-filter#deploy)
@@ -36,6 +37,11 @@ docker exec jaws /scripts/client/list-active.py
 docker exec jaws /scripts/client/list-active.py --topic only-alarm1
 docker exec jaws /scripts/client/list-active.py --topic only-alarm2
 ```
+## Filter API
+Each filter rule corresponds to a unique output topic (the output topic is the message key).  Each rule contains a few filter fields, which are all optional.   Filds that are non-null are combined with logical and by the matcher.  For example if both the alarm category array and alarm location array fields are non null then the output topic will contain only alarms in which both the alarm category is contained in the category array AND the alarm location is contained in the location array.  The filter fields are:
+ - alarm name array
+ - alarm location array
+ - alarm category array
 ## Build
 This [Java 11](https://adoptopenjdk.net/) project uses the [Gradle 6](https://gradle.org/) build tool to automatically download dependencies and build the project from source:
 
