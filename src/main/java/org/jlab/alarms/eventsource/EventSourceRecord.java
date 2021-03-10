@@ -18,6 +18,6 @@ public class EventSourceRecord<K,V> {
     }
 
     public String toString() {
-        return key.toString() + "=" + value.toString();
+        return (key == null ? "null" : key.toString()) + "=" + (value == null ? "null" : value.toString());
     }
 }
