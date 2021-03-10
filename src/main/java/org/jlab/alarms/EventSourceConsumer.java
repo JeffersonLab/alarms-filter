@@ -1,9 +1,7 @@
 package org.jlab.alarms;
 
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
+import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.WakeupException;
 import org.slf4j.Logger;
@@ -35,9 +33,31 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
 
         config = new EventSourceConfig(props);
 
-        Map<String, Object> withDefaults = config.valuesWithPrefixOverride("event.source");
+        // Not sure if there is a better way to get configs (with defaults) from EventSourceConfig into a
+        // Properties object (or Map) for KafkaConsumer - we manually copy values over into a new clean Properties.
+        // Tried the following without success:
+        // - if you use config.valuesWithPrefixOverride() to obtain consumer props it will compile, but serialization
+        // may fail at runtime w/ClassCastException! (I guess stuff is mangled from String to Objects or something)
+        // - if you simply pass the constructor argument above "props" along to KafkaConsumer, the defaults for missing
+        // values won't be set.
+        Properties consumerProps = new Properties();
 
-        consumer = new KafkaConsumer<K, V>(withDefaults);
+        // Pass values in as is from user (without defaults); then next we'll ensure defaults are used if needed
+        // Note: using new Properties(props) does NOT work as that sets the defaults field inside the Properties object,
+        // which are not carried over later
+        // inside the KafkaConsumer constructor when it also creates a new Properties and uses putAll().
+        consumerProps.putAll(props);
+
+        consumerProps.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS));
+        consumerProps.setProperty("schema.registry.url", config.getString(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL));
+        consumerProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_GROUP));
+        consumerProps.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER));
+        consumerProps.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER));
+
+        // This is passed in via putAll(props), if needed (we don't have a default value set in EventSourceConfig
+        //consumerProps.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG,?);
+
+        consumer = new KafkaConsumer<K, V>(consumerProps);
     }
 
     public void addListener(EventSourceListener<K, V> listener) {

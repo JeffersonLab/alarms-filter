@@ -26,9 +26,6 @@ public class ConsumerAPITest {
 
         final EventSourceConsumer<String, RegisteredAlarm> consumer = new EventSourceConsumer<>(props);
 
-        RegisteredAlarm test = new RegisteredAlarm();
-        System.out.println("Classloader found RegisteredAlarm: " + test);
-
         consumer.addListener(new EventSourceListener<>() {
             @Override
             public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
