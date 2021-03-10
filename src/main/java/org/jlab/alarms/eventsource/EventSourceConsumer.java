@@ -69,7 +69,8 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         listeners.remove(listener);
     }
 
-    public void start() {
+    @Override
+    public void run() {
         boolean transitioned = consumerState.compareAndSet(CONSUMER_STATE.INITIALIZING, CONSUMER_STATE.RUNNING);
 
         if(!transitioned) {
@@ -169,7 +170,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         boolean hasChanges = false;
 
         while(consumerState.get() == CONSUMER_STATE.RUNNING) {
-            log.debug("polling for changes");
+            log.debug("polling for changes ({})", config.getString(EventSourceConfig.EVENT_SOURCE_TOPIC));
             ConsumerRecords<K, V> records = consumer.poll(Duration.ofMillis(config.getLong(EventSourceConfig.EVENT_SOURCE_POLL_MILLIS)));
 
             if (records.count() > 0) { // We have changes
@@ -204,7 +205,7 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
 
     private void notifyListeners() {
         for(EventSourceListener<K, V> listener: listeners) {
-            listener.update(changes);
+            listener.update(new ArrayList<>(changes)); // Safer to return new List
         }
         changes.clear();
     }
