@@ -6,6 +6,7 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.processor.ProcessorContext;
@@ -53,6 +54,7 @@ public class AlarmsFilter {
         props.put(EventSourceConfig.EVENT_SOURCE_TOPIC, "registered-alarms");
         props.put(EventSourceConfig.EVENT_SOURCE_GROUP, "AlarmFilterRegistered");
         props.put(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS, bootstrapServers);
+        props.put(EventSourceConfig.EVENT_SOURCE_POLL_MILLIS, 5000);
         props.put(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
 
@@ -73,6 +75,7 @@ public class AlarmsFilter {
         props.put(EventSourceConfig.EVENT_SOURCE_TOPIC, "filter-commands");
         props.put(EventSourceConfig.EVENT_SOURCE_GROUP, "AlarmFilterCommands");
         props.put(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS, bootstrapServers);
+        props.put(EventSourceConfig.EVENT_SOURCE_POLL_MILLIS, 5000);
         props.put(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER, FilterCommandSerde.key().deserializer().getClass().getName());
         props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, FilterCommandSerde.value().deserializer().getClass().getName());
 
@@ -251,10 +254,16 @@ public class AlarmsFilter {
         commandConsumer.addListener(new EventSourceListener<>() {
             @Override
             public void update(List<EventSourceRecord<CommandRecordKey, CommandRecordValue>> changes) {
+
+                System.err.println("update called!");
+
+                log.warn("We've got an update: ({}) changes", changes.size());
+
                 // 1. Stop Stream and destroy outputTopic
                 // 2. If set command, create new stream with new topic
                 try {
                     for (EventSourceRecord<CommandRecordKey, CommandRecordValue> command : changes) {
+                        log.warn("Handling command: {}", command);
                         unsetStream(command); // Always attempt to clear stream first when new command comes
 
                         if (command.getValue() != null) { // Only set new stream if command value is not null
@@ -333,8 +342,16 @@ public class AlarmsFilter {
         // Always attempt to destroy (cleanup topic) too
         String topic = command.getKey().getOutputTopic();
 
-        DeleteTopicsResult result = admin.deleteTopics(Arrays.asList(topic));
+        try {
+            DeleteTopicsResult result = admin.deleteTopics(Arrays.asList(topic));
 
-        result.all().get(); // blocks...
+            result.all().get(); // blocks...
+        } catch(ExecutionException e) {
+            if(e.getCause() instanceof UnknownTopicOrPartitionException) {
+                log.debug("Topic did not exist"); // This is fine...
+            } else {
+                throw e;
+            }
+        }
     }
 }
