@@ -2,6 +2,9 @@ package org.jlab.alarms.client;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
+import org.jlab.alarms.CommandRecordKey;
+import org.jlab.alarms.CommandRecordValue;
+import org.jlab.alarms.FilterCommandSerde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,12 +22,12 @@ public class CommandConsumer {
         Properties props = new Properties();
         props.put("bootstrap.servers", servers);
         props.put("group.id", "CommandConsumer");
-        props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+        props.put("key.deserializer",  FilterCommandSerde.key().deserializer().getClass().getName());
+        props.put("value.deserializer", FilterCommandSerde.value().deserializer().getClass().getName());
 
          TopicInfo info = new TopicInfo();
 
-        try(KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props)) {
+        try(KafkaConsumer<CommandRecordKey, CommandRecordValue> consumer = new KafkaConsumer<>(props)) {
                 consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceListener() {
 
                 @Override
@@ -43,9 +46,9 @@ public class CommandConsumer {
             });
 
             while (!info.empty) {
-                ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
+                ConsumerRecords<CommandRecordKey, CommandRecordValue> records = consumer.poll(Duration.ofMillis(100));
 
-                for (ConsumerRecord<String, String> record : records) {
+                for (ConsumerRecord<CommandRecordKey, CommandRecordValue> record : records) {
                     System.out.printf("%s=%s%n", record.key(), record.value());
                     info.empty = (info.lastOffset == record.offset());
 		        }

@@ -9,6 +9,10 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.streams.*;
 import org.apache.kafka.streams.kstream.*;
 import org.apache.kafka.streams.processor.ProcessorContext;
+import org.jlab.alarms.eventsource.EventSourceConfig;
+import org.jlab.alarms.eventsource.EventSourceConsumer;
+import org.jlab.alarms.eventsource.EventSourceListener;
+import org.jlab.alarms.eventsource.EventSourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +35,9 @@ public class AlarmsFilter {
 
     static EventSourceConsumer<String, RegisteredAlarm> registeredConsumer;
 
-    static CommandTopicConsumer commandConsumer;
+    static EventSourceConsumer<CommandRecordKey, CommandRecordValue> commandConsumer;
 
-    final static Map<CommandRecord.CommandKey, KafkaStreams> streamsList = new ConcurrentHashMap<>();
+    final static Map<CommandRecordKey, KafkaStreams> streamsList = new ConcurrentHashMap<>();
 
     final static Map<String, RegisteredAlarm> registeredAlarms = new ConcurrentHashMap<>();
 
@@ -47,7 +51,7 @@ public class AlarmsFilter {
 
         Properties props = new Properties();
         props.put(EventSourceConfig.EVENT_SOURCE_TOPIC, "registered-alarms");
-        props.put(EventSourceConfig.EVENT_SOURCE_GROUP, "AlarmFilterRegisteredConsumer");
+        props.put(EventSourceConfig.EVENT_SOURCE_GROUP, "AlarmFilterRegistered");
         props.put(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS, bootstrapServers);
         props.put(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
@@ -55,6 +59,22 @@ public class AlarmsFilter {
         // Deserializer specific configs
         props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://registry:8081");
         props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG,"true");
+
+        return props;
+    }
+
+    static Properties getCommandConfig() {
+
+        String bootstrapServers = System.getenv("BOOTSTRAP_SERVERS");
+
+        bootstrapServers = (bootstrapServers == null) ? "localhost:9092" : bootstrapServers;
+
+        Properties props = new Properties();
+        props.put(EventSourceConfig.EVENT_SOURCE_TOPIC, "filter-commands");
+        props.put(EventSourceConfig.EVENT_SOURCE_GROUP, "AlarmFilterCommands");
+        props.put(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS, bootstrapServers);
+        props.put(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER, FilterCommandSerde.key().deserializer().getClass().getName());
+        props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, FilterCommandSerde.value().deserializer().getClass().getName());
 
         return props;
     }
@@ -98,7 +118,7 @@ public class AlarmsFilter {
      * @param props The streams configuration
      * @return The Topology
      */
-    static Topology createTopology(Properties props, CommandRecord command) {
+    static Topology createTopology(Properties props, EventSourceRecord<CommandRecordKey, CommandRecordValue> command) {
         final StreamsBuilder builder = new StreamsBuilder();
 
         // If you get an unhelpful NullPointerException in the depths of the AVRO deserializer it's likely because you didn't set registry config
@@ -123,9 +143,9 @@ public class AlarmsFilter {
      */
     private static final class MsgTransformerFactory implements TransformerSupplier<ActiveAlarmKey, ActiveAlarmValue, KeyValue<ActiveAlarmKey, ActiveAlarmValue>> {
 
-        private final CommandRecord command;
+        private final EventSourceRecord<CommandRecordKey, CommandRecordValue> command;
 
-        public MsgTransformerFactory(CommandRecord command) {
+        public MsgTransformerFactory(EventSourceRecord<CommandRecordKey, CommandRecordValue> command) {
             this.command = command;
         }
 
@@ -150,11 +170,11 @@ public class AlarmsFilter {
 
                     log.debug("Handling message: {}={}", key, value);
 
-                    log.debug("Applying filter: {}", command.getFilterName());
+                    log.debug("Applying filter: {}", command.getValue().getFilterName());
 
-                    Set<String> alarmNames = command.getAlarmNames();
-                    Set<String> locations = command.getLocations();
-                    Set<String> categories = command.getCategories();
+                    Set<String> alarmNames = command.getValue().getAlarmNames();
+                    Set<String> locations = command.getValue().getLocations();
+                    Set<String> categories = command.getValue().getCategories();
 
                     String alarmName = key.getName();
                     String location = null;
@@ -225,15 +245,16 @@ public class AlarmsFilter {
 
         registeredConsumer.start();
 
-        CommandConsumerConfig commandConfig = new CommandConsumerConfig(new HashMap<>());
+        Properties commandProps = getCommandConfig();
+        commandConsumer = new EventSourceConsumer<>(commandProps);
 
-        commandConsumer = new CommandTopicConsumer(new CommandChangeListener() {
+        commandConsumer.addListener(new EventSourceListener<>() {
             @Override
-            public void update(List<CommandRecord> changes) {
+            public void update(List<EventSourceRecord<CommandRecordKey, CommandRecordValue>> changes) {
                 // 1. Stop Stream and destroy outputTopic
                 // 2. If set command, create new stream with new topic
                 try {
-                    for (CommandRecord command : changes) {
+                    for (EventSourceRecord<CommandRecordKey, CommandRecordValue> command : changes) {
                         unsetStream(command); // Always attempt to clear stream first when new command comes
 
                         if (command.getValue() != null) { // Only set new stream if command value is not null
@@ -244,7 +265,7 @@ public class AlarmsFilter {
                     shutdown(e);
                 }
             }
-        }, commandConfig);
+        });
 
         commandConsumer.start();
 
@@ -289,10 +310,10 @@ public class AlarmsFilter {
         latch.countDown();
     }
 
-    public static void setStream(CommandRecord command) {
-        log.debug("setStream: {}", command.getOutputTopic());
+    public static void setStream(EventSourceRecord<CommandRecordKey, CommandRecordValue> command) {
+        log.debug("setStream: {}", command.getKey().getOutputTopic());
 
-        final Properties props = getStreamsConfig(command.getOutputTopic());
+        final Properties props = getStreamsConfig(command.getKey().getOutputTopic());
         final Topology top = createTopology(props, command);
         final KafkaStreams streams = new KafkaStreams(top, props);
 
@@ -301,8 +322,8 @@ public class AlarmsFilter {
         streams.start();
     }
 
-    public static void unsetStream(CommandRecord command) throws ExecutionException, InterruptedException {
-        log.debug("unsetStream: {}", command.getOutputTopic());
+    public static void unsetStream(EventSourceRecord<CommandRecordKey, CommandRecordValue> command) throws ExecutionException, InterruptedException {
+        log.debug("unsetStream: {}", command.getKey().getOutputTopic());
         KafkaStreams streams = streamsList.remove(command.getKey());
 
         if(streams != null) {
@@ -310,7 +331,7 @@ public class AlarmsFilter {
         }
 
         // Always attempt to destroy (cleanup topic) too
-        String topic = command.getOutputTopic();
+        String topic = command.getKey().getOutputTopic();
 
         DeleteTopicsResult result = admin.deleteTopics(Arrays.asList(topic));
 

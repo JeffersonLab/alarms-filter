@@ -2,7 +2,9 @@ package org.jlab.alarms.client;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jlab.alarms.CommandRecord;
+import org.jlab.alarms.CommandRecordKey;
+import org.jlab.alarms.CommandRecordValue;
+import org.jlab.alarms.FilterCommandSerde;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -20,30 +22,27 @@ public class CommandProducer {
         String locationCsv = args[6];
         String categoryCsv = args[7];
 
-        CommandRecord record = new CommandRecord();
-        record.setOutputTopic(outTopic);
+        CommandRecordKey key = new CommandRecordKey();
+        CommandRecordValue value = new CommandRecordValue();
 
-        String key = record.getKey().toJSON();
-        String value;
+        key.setOutputTopic(outTopic);
 
         if("true".equals(unset)) {
             value = null;
         } else {
-            record.setFilterName(filterName);
-            record.setAlarmNames(fromCsv(alarmNameCsv));
-            record.setLocations(fromCsv(locationCsv));
-            record.setCategories(fromCsv(categoryCsv));
-
-            value = record.getValue().toJSON();
+            value.setFilterName(filterName);
+            value.setAlarmNames(fromCsv(alarmNameCsv));
+            value.setLocations(fromCsv(locationCsv));
+            value.setCategories(fromCsv(categoryCsv));
         }
 
         Properties props = new Properties();
         props.put("bootstrap.servers", servers);
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("key.serializer", FilterCommandSerde.key().serializer().getClass().getName());
+        props.put("value.serializer", FilterCommandSerde.value().serializer().getClass().getName());
 
-        try(KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
-            producer.send(new ProducerRecord<String, String>(commandTopic, key, value));
+        try(KafkaProducer<CommandRecordKey, CommandRecordValue> producer = new KafkaProducer<>(props)) {
+            producer.send(new ProducerRecord<>(commandTopic, key, value));
         }
     }
 

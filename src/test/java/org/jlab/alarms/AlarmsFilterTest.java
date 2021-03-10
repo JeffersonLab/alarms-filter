@@ -1,6 +1,7 @@
 package org.jlab.alarms;
 
 import org.apache.kafka.streams.*;
+import org.jlab.alarms.eventsource.EventSourceRecord;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,10 +29,10 @@ public class AlarmsFilterTest {
 
         final String outTopicName = "alarms-filter-test";
 
-        final CommandRecord command = new CommandRecord();
-        command.setOutputTopic(outTopicName);
-        command.setFilterName("Testing Filter!");
-        command.setAlarmNames(new HashSet<>(Arrays.asList(new String[]{"alarm1"}))); // Only allow alarm1 to pass filter
+        final EventSourceRecord<CommandRecordKey, CommandRecordValue> command = new EventSourceRecord<>(new CommandRecordKey(), new CommandRecordValue());
+        command.getKey().setOutputTopic(outTopicName);
+        command.getValue().setFilterName("Testing Filter!");
+        command.getValue().setAlarmNames(new HashSet<>(Arrays.asList(new String[]{"alarm1"}))); // Only allow alarm1 to pass filter
 
 
         final Properties streamsConfig = AlarmsFilter.getStreamsConfig(outTopicName);

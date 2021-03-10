@@ -2,6 +2,10 @@ package org.jlab.alarms.client.extras;
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.jlab.alarms.*;
+import org.jlab.alarms.eventsource.EventSourceConfig;
+import org.jlab.alarms.eventsource.EventSourceConsumer;
+import org.jlab.alarms.eventsource.EventSourceListener;
+import org.jlab.alarms.eventsource.EventSourceRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
