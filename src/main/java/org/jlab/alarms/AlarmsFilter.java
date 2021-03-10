@@ -51,7 +51,9 @@ public class AlarmsFilter {
         props.put(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS, bootstrapServers);
         props.put(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
         props.put(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER, "io.confluent.kafka.serializers.KafkaAvroDeserializer");
-        props.put(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL, "http://registry:8081");
+
+        // Deserializer specific configs
+        props.put(KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG, "http://registry:8081");
         props.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG,"true");
 
         return props;
@@ -211,15 +213,6 @@ public class AlarmsFilter {
         registeredConsumer.addListener(new EventSourceListener<>() {
             @Override
             public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
-                for (EventSourceRecord<String, RegisteredAlarm> record : changes) {
-                    System.out.println(record);
-                }
-            }
-        });
-
-        /*registeredConsumer.addListener(new EventSourceListener<>() {
-            @Override
-            public void update(List<EventSourceRecord<String, RegisteredAlarm>> changes) {
                 for(EventSourceRecord<String, RegisteredAlarm> record: changes) {
                     if(record.getValue() == null) {
                         registeredAlarms.remove(record.getKey());
@@ -228,7 +221,7 @@ public class AlarmsFilter {
                     }
                 }
             }
-        });*/
+        });
 
         registeredConsumer.start();
 

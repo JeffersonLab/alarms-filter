@@ -49,13 +49,15 @@ public class EventSourceConsumer<K, V> extends Thread implements AutoCloseable {
         consumerProps.putAll(props);
 
         consumerProps.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_BOOTSTRAP_SERVERS));
-        consumerProps.setProperty("schema.registry.url", config.getString(EventSourceConfig.EVENT_SOURCE_SCHEMA_REGISTRY_URL));
         consumerProps.setProperty(ConsumerConfig.GROUP_ID_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_GROUP));
         consumerProps.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_KEY_DESERIALIZER));
         consumerProps.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, config.getString(EventSourceConfig.EVENT_SOURCE_VALUE_DESERIALIZER));
 
-        // This is passed in via putAll(props), if needed (we don't have a default value set in EventSourceConfig
-        //consumerProps.put(KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG,?);
+        // Deserializer specific configs are passed in via putAll(props) and don't have defaults in EventSourceConfig
+        // Examples:
+        // - KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG
+        // - KafkaAvroDeserializerConfig.SPECIFIC_AVRO_READER_CONFIG
+
 
         consumer = new KafkaConsumer<K, V>(consumerProps);
     }

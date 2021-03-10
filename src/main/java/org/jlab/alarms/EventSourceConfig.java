@@ -15,7 +15,6 @@ public class EventSourceConfig extends AbstractConfig {
     public static final String EVENT_SOURCE_BOOTSTRAP_SERVERS = "bootstrap.servers";
     public static final String EVENT_SOURCE_KEY_DESERIALIZER = "key.deserializer";
     public static final String EVENT_SOURCE_VALUE_DESERIALIZER = "value.deserializer";
-    public static final String EVENT_SOURCE_SCHEMA_REGISTRY_URL = "schema.registry.url";
 
     public EventSourceConfig(Map originals) {
         super(configDef(), originals, false);
@@ -57,11 +56,6 @@ public class EventSourceConfig extends AbstractConfig {
                         ConfigDef.Type.STRING,
                         "org.apache.kafka.common.serialization.StringDeserializer",
                         ConfigDef.Importance.HIGH,
-                        "Class name of deserializer to use for the value")
-                .define(EVENT_SOURCE_SCHEMA_REGISTRY_URL,
-                        ConfigDef.Type.STRING,
-                        "http://localhost:8081",
-                        ConfigDef.Importance.HIGH,
-                        "URL to schema registry");
+                        "Class name of deserializer to use for the value");
     }
 }
