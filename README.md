@@ -38,7 +38,7 @@ docker exec jaws /scripts/client/list-active.py --topic only-alarm1
 docker exec jaws /scripts/client/list-active.py --topic only-alarm2
 ```
 ## Filter API
-Each filter rule corresponds to a unique output topic (the output topic is the message key).  Each rule contains a few filter fields, which are all optional.   Filds that are non-null are combined with logical and by the matcher.  For example if both the alarm category array and alarm location array fields are non null then the output topic will contain only alarms in which both the alarm category is contained in the category array AND the alarm location is contained in the location array.  The filter fields are:
+A command topic is used to set filter rules.  Each filter rule corresponds to a unique output topic (the output topic is the command topic message key).  Each rule contains a few filter fields, which are all optional.   Filds that are non-null are combined with logical and by the matcher.  For example if both the alarm category array and alarm location array fields are non null then the output topic will contain only alarms in which both the alarm category is contained in the category array AND the alarm location is contained in the location array.  The filter fields are:
  - alarm name array
  - alarm location array
  - alarm category array
