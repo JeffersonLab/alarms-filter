@@ -9,11 +9,11 @@ read -ra tmpArray <<< "$BOOTSTRAP_SERVERS"
 BOOTSTRAP_SERVER=${tmpArray[0]}
 
 help=$'Usage:\n'
-help+="  Set:   $0 [-n] filterName [-o] outTopic [-a] alarmNameCsv [-c] categoryCsv [-l] locationCsv"
+help+="  Set:   $0 [-o] outTopic [-n] filterName [-a] alarmNameCsv [-c] categoryCsv [-l] locationCsv"
 help+=$'\n'
-help+="  Unset: $0 [-n] filterName -u"
+help+="  Unset: $0 [-o] outTopic -u"
 
-while getopts ":u:o:n:a:c:l:" opt; do
+while getopts "uo:n:a:c:l:" opt; do
   case ${opt} in
     u )
       unset=true
@@ -33,7 +33,7 @@ while getopts ":u:o:n:a:c:l:" opt; do
     l )
       locationCsv=$OPTARG
       ;;
-    \? ) echo "$help"
+    \? ) echo "$help"; exit;
       ;;
   esac
 done
@@ -44,6 +44,12 @@ then
     exit
 fi
 
+#echo "unset: $unset"
+#echo "outTopic: $outTopic"
+#echo "filterName: $filterName"
+#echo "alarmNameCsv: $alarmNameCsv"
+#echo "categoryCsv: $categoyCsv"
+#echo "locationCsv: $locationCsv"
 
 CWD=$(readlink -f "$(dirname "$0")")
 
