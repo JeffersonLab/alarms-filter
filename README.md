@@ -31,8 +31,8 @@ docker exec jaws /scripts/client/set-alarming.py alarm2
 ```
 5. Verify our filtered topic only contains alarm1
 ```
-docker exec jaws /scripts/client/list-alarming.py
-docker exec jaws /scripts/client/list-alarming.py --topic my-filtered-topic
+docker exec jaws /scripts/client/list-active.py
+docker exec jaws /scripts/client/list-active.py --topic my-filtered-topic
 ```
 ## Build
 This [Java 11](https://adoptopenjdk.net/) project uses the [Gradle 6](https://gradle.org/) build tool to automatically download dependencies and build the project from source:
