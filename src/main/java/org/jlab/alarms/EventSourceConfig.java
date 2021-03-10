@@ -27,11 +27,6 @@ public class EventSourceConfig extends AbstractConfig {
                         "event-source",
                         ConfigDef.Importance.HIGH,
                         "Name of Kafka event source topic to monitor")
-                .define(EVENT_SOURCE_GROUP,
-                        ConfigDef.Type.STRING,
-                        "event-source",
-                        ConfigDef.Importance.HIGH,
-                        "Name of Kafka consumer group to use when monitoring the EVENT_SOURCE_TOPIC")
                 .define(EVENT_SOURCE_POLL_MILLIS,
                         ConfigDef.Type.LONG,
                         1000l,
@@ -42,6 +37,11 @@ public class EventSourceConfig extends AbstractConfig {
                         5l,
                         ConfigDef.Importance.HIGH,
                         "Max number of polls before forcing a flush - ensures changes are flushed in case of a constant stream of changes occurring more frequently than poll duration.  Set to 1 to force flush after every poll with changes")
+                .define(EVENT_SOURCE_GROUP,
+                        ConfigDef.Type.STRING,
+                        "event-source",
+                        ConfigDef.Importance.HIGH,
+                        "Name of Kafka consumer group to use when monitoring the EVENT_SOURCE_TOPIC")
                 .define(EVENT_SOURCE_BOOTSTRAP_SERVERS,
                         ConfigDef.Type.STRING,
                         "localhost:9092",
