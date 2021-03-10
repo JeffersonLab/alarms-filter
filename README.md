@@ -47,6 +47,13 @@ Scripts are provided to list filters (_list-filters.sh_) and set/unset filters (
 ```
 {"outputTopic": "only-alarm1"}={"filterName":"only-alarm1","alarmNames":["alarm1"],"locations":null,"categories":null}
 ```
+The script options:
+```
+# ./set-filter.sh --help
+Usage:
+  Set:   ./set-filter.sh [-n] filterName [-o] outTopic [-a] alarmNameCsv [-c] categoryCsv [-l] locationCsv
+  Unset: ./set-filter.sh [-n] filterName -u
+```
 ## Build
 This [Java 11](https://adoptopenjdk.net/) project uses the [Gradle 6](https://gradle.org/) build tool to automatically download dependencies and build the project from source:
 
