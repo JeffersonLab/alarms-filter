@@ -1,4 +1,4 @@
-package org.jlab.alarms;
+package org.jlab.alarms.eventsource;
 
 import java.util.List;
 

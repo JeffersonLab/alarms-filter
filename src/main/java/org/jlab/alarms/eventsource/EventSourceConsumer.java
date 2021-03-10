@@ -1,4 +1,4 @@
-package org.jlab.alarms;
+package org.jlab.alarms.eventsource;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;

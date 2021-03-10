@@ -1,4 +1,4 @@
-package org.jlab.alarms;
+package org.jlab.alarms.eventsource;
 
 public class EventSourceRecord<K,V> {
     private K key;
