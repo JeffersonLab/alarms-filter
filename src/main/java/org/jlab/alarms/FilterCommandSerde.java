@@ -6,11 +6,27 @@ import org.jlab.alarms.serde.JsonDeserializer;
 import org.jlab.alarms.serde.JsonSerializer;
 
 public final class FilterCommandSerde {
+    // We require a no-args constructor so we create a new class that wraps JsonDeserializer
+    static public final class CommandRecordKeyDeserializer extends JsonDeserializer<CommandRecordKey> {
+
+        public CommandRecordKeyDeserializer() {
+            super(CommandRecordKey.class);
+        }
+    }
+
+    static public final class CommandRecordValueDeserializer extends JsonDeserializer<CommandRecordValue> {
+
+        public CommandRecordValueDeserializer() {
+            super(CommandRecordValue.class);
+        }
+    }
+
+
     static public final class CommandRecordKeySerde
             extends Serdes.WrapperSerde<CommandRecordKey> {
         public CommandRecordKeySerde() {
             super(new JsonSerializer<>(),
-                    new JsonDeserializer<>(CommandRecordKey.class));
+                    new CommandRecordKeyDeserializer());
         }
     }
 
@@ -18,7 +34,7 @@ public final class FilterCommandSerde {
             extends Serdes.WrapperSerde<CommandRecordValue> {
         public CommandRecordValueSerde() {
             super(new JsonSerializer<>(),
-                    new JsonDeserializer<>(CommandRecordValue.class));
+                    new CommandRecordValueDeserializer());
         }
     }
 
