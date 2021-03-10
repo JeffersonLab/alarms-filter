@@ -1,5 +1,8 @@
 package org.jlab.alarms;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.util.Set;
 
 public class CommandRecordValue {
@@ -42,5 +45,18 @@ public class CommandRecordValue {
 
     public void setFilterName(String filterName) {
         this.filterName = filterName;
+    }
+
+    public String toString() {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String json = null;
+        try {
+            json = objectMapper.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
+        return json;
     }
 }

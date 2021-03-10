@@ -14,4 +14,8 @@ public class CommandRecordKey {
     public void setOutputTopic(String outputTopic) {
         this.outputTopic = outputTopic;
     }
+
+    public String toString() {
+        return "{\"outputTopic\": \"" + outputTopic + "\"}";
+    }
 }
