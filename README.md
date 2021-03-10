@@ -20,19 +20,21 @@ cd alarms-filter
 ```
 docker-compose up
 ```
-3. Create a filter!
+3. Create some filters!
 ```
-docker exec filter /opt/alarms-filter/bin/set-filter.sh -n only-alarm1 -o my-filtered-topic -a alarm1
+docker exec filter /opt/alarms-filter/bin/set-filter.sh -n only-alarm1 -o only-alarm1 -a alarm1
+docker exec filter /opt/alarms-filter/bin/set-filter.sh -n only-alarm2 -o only-alarm2 -a alarm2
 ```
 4. Trips some alarms!
 ```
 docker exec jaws /scripts/client/set-alarming.py alarm1
 docker exec jaws /scripts/client/set-alarming.py alarm2
 ```
-5. Verify our filtered topic only contains alarm1
+5. Verify our topics filtered properly
 ```
 docker exec jaws /scripts/client/list-active.py
-docker exec jaws /scripts/client/list-active.py --topic my-filtered-topic
+docker exec jaws /scripts/client/list-active.py --topic only-alarm1
+docker exec jaws /scripts/client/list-active.py --topic only-alarm2
 ```
 ## Build
 This [Java 11](https://adoptopenjdk.net/) project uses the [Gradle 6](https://gradle.org/) build tool to automatically download dependencies and build the project from source:
