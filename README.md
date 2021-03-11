@@ -43,7 +43,7 @@ A command topic is used to set filter rules.  Each filter rule corresponds to a 
  - alarm location array
  - alarm category array
 
-Scripts are provided to list filters (_list-filters.sh_) and set/unset filters (_set-filters.sh_).   Or you can write JSON formatted command directly to the command topic (defaults to name _filter-commands_).  The JSON would look something like:
+Scripts are provided to list filters (_list-filters.sh_) and set/unset filters (_set-filters.sh_).   Alternatively you can produce JSON formatted commands to the command topic (defaults to topic name _filter-commands_).  The JSON would look something like:
 ```
 {"outputTopic": "only-alarm1"}={"filterName":"only-alarm1","alarmNames":["alarm1"],"locations":null,"categories":null}
 ```
