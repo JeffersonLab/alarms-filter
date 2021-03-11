@@ -36,9 +36,9 @@ public class AlarmsFilter {
 
     static EventSourceConsumer<String, RegisteredAlarm> registeredConsumer;
 
-    static EventSourceConsumer<CommandRecordKey, CommandRecordValue> commandConsumer;
+    static EventSourceConsumer<FilterCommandKey, FilterCommandValue> commandConsumer;
 
-    final static Map<CommandRecordKey, KafkaStreams> streamsList = new ConcurrentHashMap<>();
+    final static Map<FilterCommandKey, KafkaStreams> streamsList = new ConcurrentHashMap<>();
 
     final static Map<String, RegisteredAlarm> registeredAlarms = new ConcurrentHashMap<>();
 
@@ -121,7 +121,7 @@ public class AlarmsFilter {
      * @param props The streams configuration
      * @return The Topology
      */
-    static Topology createTopology(Properties props, EventSourceRecord<CommandRecordKey, CommandRecordValue> command) {
+    static Topology createTopology(Properties props, EventSourceRecord<FilterCommandKey, FilterCommandValue> command) {
         final StreamsBuilder builder = new StreamsBuilder();
 
         // If you get an unhelpful NullPointerException in the depths of the AVRO deserializer it's likely because you didn't set registry config
@@ -146,9 +146,9 @@ public class AlarmsFilter {
      */
     private static final class MsgTransformerFactory implements TransformerSupplier<ActiveAlarmKey, ActiveAlarmValue, KeyValue<ActiveAlarmKey, ActiveAlarmValue>> {
 
-        private final EventSourceRecord<CommandRecordKey, CommandRecordValue> command;
+        private final EventSourceRecord<FilterCommandKey, FilterCommandValue> command;
 
-        public MsgTransformerFactory(EventSourceRecord<CommandRecordKey, CommandRecordValue> command) {
+        public MsgTransformerFactory(EventSourceRecord<FilterCommandKey, FilterCommandValue> command) {
             this.command = command;
         }
 
@@ -253,7 +253,7 @@ public class AlarmsFilter {
 
         commandConsumer.addListener(new EventSourceListener<>() {
             @Override
-            public void update(List<EventSourceRecord<CommandRecordKey, CommandRecordValue>> changes) {
+            public void update(List<EventSourceRecord<FilterCommandKey, FilterCommandValue>> changes) {
 
                 System.err.println("update called!");
 
@@ -262,7 +262,7 @@ public class AlarmsFilter {
                 // 1. Stop Stream and destroy outputTopic
                 // 2. If set command, create new stream with new topic
                 try {
-                    for (EventSourceRecord<CommandRecordKey, CommandRecordValue> command : changes) {
+                    for (EventSourceRecord<FilterCommandKey, FilterCommandValue> command : changes) {
                         log.warn("Handling command: {}", command);
                         unsetStream(command); // Always attempt to clear stream first when new command comes
 
@@ -319,7 +319,7 @@ public class AlarmsFilter {
         latch.countDown();
     }
 
-    public static void setStream(EventSourceRecord<CommandRecordKey, CommandRecordValue> command) {
+    public static void setStream(EventSourceRecord<FilterCommandKey, FilterCommandValue> command) {
         log.debug("setStream: {}", command.getKey().getOutputTopic());
 
         final Properties props = getStreamsConfig(command.getKey().getOutputTopic());
@@ -331,7 +331,7 @@ public class AlarmsFilter {
         streams.start();
     }
 
-    public static void unsetStream(EventSourceRecord<CommandRecordKey, CommandRecordValue> command) throws ExecutionException, InterruptedException {
+    public static void unsetStream(EventSourceRecord<FilterCommandKey, FilterCommandValue> command) throws ExecutionException, InterruptedException {
         log.debug("unsetStream: {}", command.getKey().getOutputTopic());
         KafkaStreams streams = streamsList.remove(command.getKey());
 

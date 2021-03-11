@@ -2,8 +2,8 @@ package org.jlab.alarms.client;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
-import org.jlab.alarms.CommandRecordKey;
-import org.jlab.alarms.CommandRecordValue;
+import org.jlab.alarms.FilterCommandKey;
+import org.jlab.alarms.FilterCommandValue;
 import org.jlab.alarms.FilterCommandSerde;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public class CommandConsumer {
 
         TopicInfo info = new TopicInfo();
 
-        try(KafkaConsumer<CommandRecordKey, CommandRecordValue> consumer = new KafkaConsumer<>(props)) {
+        try(KafkaConsumer<FilterCommandKey, FilterCommandValue> consumer = new KafkaConsumer<>(props)) {
                 consumer.subscribe(Collections.singletonList(topic), new ConsumerRebalanceListener() {
 
                 @Override
@@ -46,9 +46,9 @@ public class CommandConsumer {
             });
 
             while (!info.empty) {
-                ConsumerRecords<CommandRecordKey, CommandRecordValue> records = consumer.poll(Duration.ofMillis(100));
+                ConsumerRecords<FilterCommandKey, FilterCommandValue> records = consumer.poll(Duration.ofMillis(100));
 
-                for (ConsumerRecord<CommandRecordKey, CommandRecordValue> record : records) {
+                for (ConsumerRecord<FilterCommandKey, FilterCommandValue> record : records) {
                     System.out.printf("%s=%s%n", record.key(), record.value());
                     info.empty = (info.lastOffset == record.offset());
 		        }

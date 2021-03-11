@@ -1,9 +1,9 @@
 package org.jlab.alarms;
 
-public class CommandRecordKey {
+public class FilterCommandKey {
     private String outputTopic;
 
-    public CommandRecordKey() {
+    public FilterCommandKey() {
 
     }
 

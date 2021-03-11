@@ -7,23 +7,23 @@ import org.jlab.alarms.serde.JsonSerializer;
 
 public final class FilterCommandSerde {
     // We require a no-args constructor so we create a new class that wraps JsonDeserializer
-    static public final class CommandRecordKeyDeserializer extends JsonDeserializer<CommandRecordKey> {
+    static public final class CommandRecordKeyDeserializer extends JsonDeserializer<FilterCommandKey> {
 
         public CommandRecordKeyDeserializer() {
-            super(CommandRecordKey.class);
+            super(FilterCommandKey.class);
         }
     }
 
-    static public final class CommandRecordValueDeserializer extends JsonDeserializer<CommandRecordValue> {
+    static public final class CommandRecordValueDeserializer extends JsonDeserializer<FilterCommandValue> {
 
         public CommandRecordValueDeserializer() {
-            super(CommandRecordValue.class);
+            super(FilterCommandValue.class);
         }
     }
 
 
     static public final class CommandRecordKeySerde
-            extends Serdes.WrapperSerde<CommandRecordKey> {
+            extends Serdes.WrapperSerde<FilterCommandKey> {
         public CommandRecordKeySerde() {
             super(new JsonSerializer<>(),
                     new CommandRecordKeyDeserializer());
@@ -31,18 +31,18 @@ public final class FilterCommandSerde {
     }
 
     static public final class CommandRecordValueSerde
-            extends Serdes.WrapperSerde<CommandRecordValue> {
+            extends Serdes.WrapperSerde<FilterCommandValue> {
         public CommandRecordValueSerde() {
             super(new JsonSerializer<>(),
                     new CommandRecordValueDeserializer());
         }
     }
 
-    public static Serde<CommandRecordKey> key() {
+    public static Serde<FilterCommandKey> key() {
         return new FilterCommandSerde.CommandRecordKeySerde();
     }
 
-    public static Serde<CommandRecordValue> value() {
+    public static Serde<FilterCommandValue> value() {
         return new FilterCommandSerde.CommandRecordValueSerde();
     }
 }

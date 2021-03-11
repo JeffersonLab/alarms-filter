@@ -29,7 +29,7 @@ public class AlarmsFilterTest {
 
         final String outTopicName = "alarms-filter-test";
 
-        final EventSourceRecord<CommandRecordKey, CommandRecordValue> command = new EventSourceRecord<>(new CommandRecordKey(), new CommandRecordValue());
+        final EventSourceRecord<FilterCommandKey, FilterCommandValue> command = new EventSourceRecord<>(new FilterCommandKey(), new FilterCommandValue());
         command.getKey().setOutputTopic(outTopicName);
         command.getValue().setFilterName("Testing Filter!");
         command.getValue().setAlarmNames(new HashSet<>(Arrays.asList(new String[]{"alarm1"}))); // Only allow alarm1 to pass filter

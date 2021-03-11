@@ -5,13 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Set;
 
-public class CommandRecordValue {
+public class FilterCommandValue {
     private String filterName;
     private Set<String> alarmNames;
     private Set<String> locations;
     private Set<String> categories;
 
-    public CommandRecordValue() {
+    public FilterCommandValue() {
 
     }
 

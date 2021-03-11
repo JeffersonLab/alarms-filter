@@ -2,8 +2,8 @@ package org.jlab.alarms.client;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.jlab.alarms.CommandRecordKey;
-import org.jlab.alarms.CommandRecordValue;
+import org.jlab.alarms.FilterCommandKey;
+import org.jlab.alarms.FilterCommandValue;
 import org.jlab.alarms.FilterCommandSerde;
 
 import java.util.Arrays;
@@ -22,8 +22,8 @@ public class CommandProducer {
         String locationCsv = args[6];
         String categoryCsv = args[7];
 
-        CommandRecordKey key = new CommandRecordKey();
-        CommandRecordValue value = new CommandRecordValue();
+        FilterCommandKey key = new FilterCommandKey();
+        FilterCommandValue value = new FilterCommandValue();
 
         key.setOutputTopic(outTopic);
 
@@ -41,7 +41,7 @@ public class CommandProducer {
         props.put("key.serializer", FilterCommandSerde.key().serializer().getClass().getName());
         props.put("value.serializer", FilterCommandSerde.value().serializer().getClass().getName());
 
-        try(KafkaProducer<CommandRecordKey, CommandRecordValue> producer = new KafkaProducer<>(props)) {
+        try(KafkaProducer<FilterCommandKey, FilterCommandValue> producer = new KafkaProducer<>(props)) {
             producer.send(new ProducerRecord<>(commandTopic, key, value));
         }
     }
