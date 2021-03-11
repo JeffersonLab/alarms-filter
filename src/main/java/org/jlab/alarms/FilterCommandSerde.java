@@ -7,42 +7,42 @@ import org.jlab.alarms.serde.JsonSerializer;
 
 public final class FilterCommandSerde {
     // We require a no-args constructor so we create a new class that wraps JsonDeserializer
-    static public final class CommandRecordKeyDeserializer extends JsonDeserializer<FilterCommandKey> {
+    static public final class FilterCommandKeyDeserializer extends JsonDeserializer<FilterCommandKey> {
 
-        public CommandRecordKeyDeserializer() {
+        public FilterCommandKeyDeserializer() {
             super(FilterCommandKey.class);
         }
     }
 
-    static public final class CommandRecordValueDeserializer extends JsonDeserializer<FilterCommandValue> {
+    static public final class FilterCommandValueDeserializer extends JsonDeserializer<FilterCommandValue> {
 
-        public CommandRecordValueDeserializer() {
+        public FilterCommandValueDeserializer() {
             super(FilterCommandValue.class);
         }
     }
 
 
-    static public final class CommandRecordKeySerde
+    static public final class FilterCommandKeySerde
             extends Serdes.WrapperSerde<FilterCommandKey> {
-        public CommandRecordKeySerde() {
+        public FilterCommandKeySerde() {
             super(new JsonSerializer<>(),
-                    new CommandRecordKeyDeserializer());
+                    new FilterCommandKeyDeserializer());
         }
     }
 
-    static public final class CommandRecordValueSerde
+    static public final class FilterCommandValueSerde
             extends Serdes.WrapperSerde<FilterCommandValue> {
-        public CommandRecordValueSerde() {
+        public FilterCommandValueSerde() {
             super(new JsonSerializer<>(),
-                    new CommandRecordValueDeserializer());
+                    new FilterCommandValueDeserializer());
         }
     }
 
     public static Serde<FilterCommandKey> key() {
-        return new FilterCommandSerde.CommandRecordKeySerde();
+        return new FilterCommandKeySerde();
     }
 
     public static Serde<FilterCommandValue> value() {
-        return new FilterCommandSerde.CommandRecordValueSerde();
+        return new FilterCommandValueSerde();
     }
 }
